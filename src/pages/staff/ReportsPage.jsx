@@ -3,13 +3,12 @@ import { Link, useOutletContext } from "react-router-dom";
 
 import {
   ArrowRight,
+  ArrowUpRight,
   CalendarDays,
-  ChartColumn,
-  CheckCircle2,
-  Clock3,
   Download,
   FileSpreadsheet,
-  Users,
+  ShieldCheck,
+  TrendingUp,
   XCircle,
 } from "lucide-react";
 
@@ -22,7 +21,8 @@ import {
   getDentistDemand,
   getTreatment,
   getDentist,
-  exportAppointmentCSV,
+  csvCell,
+  downloadFile,
 } from "../../utils/clinicReports.js";
 
 import {
@@ -30,33 +30,35 @@ import {
   formatTime,
 } from "../../data/clinicData.js";
 
-function ReportMetric({
-  label,
-  value,
-  icon: Icon,
-  description,
-}) {
-  return (
-    <article className="ysm4-metric">
-      <span className="ysm4-metric-icon">
-        <Icon size={22} strokeWidth={1.65} />
-      </span>
+import "../../styles/smile-staff-batch5.css";
 
-      <strong>{value}</strong>
-      <h3>{label}</h3>
-      <p>{description}</p>
-    </article>
-  );
-}
+const today = () => {
+  const now = new Date();
+
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+};
 
 export default function ReportsPage() {
-  const { requests } = useOutletContext();
+  const { requests = [] } = useOutletContext();
 
   const [period, setPeriod] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [withAliases, setWithAliases] =
+    useState(false);
+  const [message, setMessage] = useState("");
 
   const filtered = useMemo(
-    () => filterByPeriod(requests, period),
-    [requests, period]
+    () =>
+      filterByPeriod(requests, period).filter(
+        (request) =>
+          status === "all" ||
+          request.status === status
+      ),
+    [requests, period, status]
   );
 
   const stats = useMemo(
@@ -64,13 +66,8 @@ export default function ReportsPage() {
     [filtered]
   );
 
-  const upcomingChart = useMemo(
-    () => getNext14Days(requests),
-    [requests]
-  );
-
-  const topServices = useMemo(
-    () => getServiceDemand(filtered).slice(0, 4),
+  const demand = useMemo(
+    () => getServiceDemand(filtered),
     [filtered]
   );
 
@@ -79,72 +76,123 @@ export default function ReportsPage() {
     [filtered]
   );
 
-  const activeTotal = Math.max(1, stats.active);
+  const pulse = useMemo(
+    () => getNext14Days(requests),
+    [requests]
+  );
 
-  const highestBar = Math.max(
+  const maxPulse = Math.max(
     1,
-    ...upcomingChart.map((item) => item.count)
+    ...pulse.map((item) => item.count)
+  );
+
+  const maxDemand = Math.max(
+    1,
+    ...demand.map((item) => item.total)
   );
 
   const upcoming = filtered
     .filter(
-      (item) =>
-        item.status === "requested"
+      (request) =>
+        request.status === "requested" &&
+        request.date >= today()
     )
     .sort((a, b) =>
       `${a.date} ${a.time}`.localeCompare(
         `${b.date} ${b.time}`
       )
     )
-    .slice(0, 6);
-
-  const completion =
-    stats.total === 0
-      ? 0
-      : Math.round(
-          (stats.active / stats.total) * 100
-        );
+    .slice(0, 5);
 
   function exportReport() {
-    exportAppointmentCSV(
-      filtered,
-      `your-smile-report-${period}.csv`
+    if (!filtered.length) return;
+
+    const headers = [
+      "Reference",
+      ...(withAliases ? ["Demo Alias"] : []),
+      "Treatment",
+      "Dentist",
+      "Date",
+      "Time",
+      "Status",
+    ];
+
+    const rows = filtered.map((request) => [
+      request.id,
+      ...(withAliases ? [request.alias] : []),
+      getTreatment(request.serviceId)?.name ||
+        "Unknown",
+      getDentist(request.doctorId)?.name ||
+        "Unknown",
+      request.date,
+      request.time,
+      request.status,
+    ]);
+
+    const content =
+      "\uFEFF" +
+      [headers, ...rows]
+        .map((row) =>
+          row.map(csvCell).join(",")
+        )
+        .join("\r\n");
+
+    downloadFile(
+      content,
+      `your-smile-operations-${period}-${status}.csv`,
+      "text/csv;charset=utf-8"
+    );
+
+    setMessage(
+      withAliases
+        ? "CSV export started with fictional visitor aliases."
+        : "CSV export started without visitor aliases."
     );
   }
 
   return (
-    <div className="ysm3-page ysm4-page">
-      <div className="ysm3-page-heading">
+    <div className="sm5-page">
+      <section className="sm5-intro sm5-intro--ink">
         <div>
-          <span className="ysm3-eyebrow">
-            CLINIC INTELLIGENCE / BATCH 4
+          <span className="sm5-eyebrow">
+            05 / OPERATIONS INTELLIGENCE
           </span>
 
           <h1>
-            A clearer picture
-            <br />
-            of <em>every request.</em>
+            Clarity behind{" "}
+            <em>every request.</em>
           </h1>
 
           <p>
-            Explore trends from fictional appointments
-            saved in this browser.
+            Read the rhythm of fictional
+            appointments—not revenue, clinical
+            outcomes, or patient activity.
           </p>
+
+          <Link to="/staff">
+            RETURN TO COMMAND CENTER
+            <ArrowUpRight size={17} />
+          </Link>
         </div>
 
-        <button
-          type="button"
-          className="ysm3-primary-button"
-          onClick={exportReport}
+        <div
+          className="sm5-intro-art"
+          aria-hidden="true"
         >
-          <Download size={18} />
-          Export Report
-        </button>
-      </div>
+          <span className="sm5-orbit" />
+          <strong>05</strong>
+          <small>
+            THE INSIGHT LEDGER / YOUR SMILE.
+          </small>
+        </div>
+      </section>
 
-      <div className="ysm4-report-toolbar">
+      <section
+        className="sm5-filterbar"
+        aria-label="Analytics filters"
+      >
         <label>
-          <span>REPORTING PERIOD</span>
+          APPOINTMENT DATE WINDOW
 
           <select
             value={period}
@@ -163,341 +211,325 @@ export default function ReportsPage() {
           </select>
         </label>
 
-        <p>
-          Filters apply to appointment dates, not
-          payment or completed treatment dates.
+        <label>
+          REQUEST STATUS
+
+          <select
+            value={status}
+            onChange={(event) =>
+              setStatus(event.target.value)
+            }
+          >
+            <option value="all">
+              All statuses
+            </option>
+            <option value="requested">
+              Requested
+            </option>
+            <option value="cancelled">
+              Cancelled
+            </option>
+          </select>
+        </label>
+
+        <label className="sm5-check">
+          <input
+            type="checkbox"
+            checked={withAliases}
+            onChange={(event) =>
+              setWithAliases(
+                event.target.checked
+              )
+            }
+          />
+          INCLUDE DEMO ALIASES IN CSV
+        </label>
+
+        <button
+          type="button"
+          className="sm5-button"
+          disabled={!filtered.length}
+          onClick={exportReport}
+        >
+          <Download size={17} />
+          EXPORT FILTERED CSV
+        </button>
+      </section>
+
+      {message && (
+        <p
+          className="sm5-feedback"
+          role="status"
+        >
+          {message}
         </p>
-      </div>
+      )}
 
-      <div className="ysm4-metric-grid">
-        <ReportMetric
-          label="Total Requests"
-          value={stats.total}
-          icon={FileSpreadsheet}
-          description="Within selected period"
-        />
+      <section
+        className="sm5-metrics"
+        aria-label="Overview metrics"
+      >
+        {[
+          [
+            "01 / REQUEST RECORDS",
+            stats.total,
+            "Selected date and status filters",
+          ],
+          [
+            "02 / REQUESTED",
+            stats.active,
+            "Pending local demonstrations",
+          ],
+          [
+            "03 / UPCOMING",
+            stats.upcoming,
+            "Active requests from today",
+          ],
+          [
+            "04 / CANCELLED",
+            stats.cancelled,
+            "Retained for audit context",
+          ],
+        ].map(([label, value, note]) => (
+          <article key={label}>
+            <span>{label}</span>
 
-        <ReportMetric
-          label="Active Requests"
-          value={stats.active}
-          icon={CheckCircle2}
-          description="Pending fictional appointments"
-        />
+            <strong>
+              {String(value).padStart(2, "0")}
+            </strong>
 
-        <ReportMetric
-          label="Upcoming"
-          value={stats.upcoming}
-          icon={CalendarDays}
-          description="Active requests dated today or later"
-        />
+            <small>{note}</small>
+          </article>
+        ))}
+      </section>
 
-        <ReportMetric
-          label="Cancelled"
-          value={stats.cancelled}
-          icon={XCircle}
-          description="Retained in local demo history"
-        />
-      </div>
-
-      <div className="ysm4-report-two">
-        <section className="ysm3-panel">
-          <div className="ysm3-panel-heading">
+      <div className="sm5-report-grid">
+        <section className="sm5-panel sm5-pulse-panel">
+          <header className="sm5-panel-head">
             <div>
-              <span className="ysm3-eyebrow">
-                SHORT-TERM DEMAND
+              <span className="sm5-eyebrow">
+                01 / FUTURE APPOINTMENT PULSE
               </span>
 
               <h2>
-                Upcoming <em>activity.</em>
+                Fourteen days <em>ahead.</em>
               </h2>
             </div>
 
-            <span className="ysm3-panel-tag">
-              NEXT 14 DAYS
-            </span>
+            <TrendingUp size={23} />
+          </header>
+
+          <div
+            className="sm5-pulse"
+            role="img"
+            aria-label={pulse
+              .map(
+                (item) =>
+                  `${item.label}: ${item.count} active requests`
+              )
+              .join(", ")}
+          >
+            {pulse.map((item) => (
+              <div key={item.date}>
+                <b>{item.count}</b>
+
+                <span className="sm5-pulse-track">
+                  <i
+                    style={{
+                      height: `${
+                        Math.max(
+                          item.count ? 5 : 1,
+                          (item.count /
+                            maxPulse) *
+                            100
+                        )
+                      }%`,
+                    }}
+                  />
+                </span>
+
+                <small>{item.label}</small>
+              </div>
+            ))}
           </div>
 
-          <div className="ysm4-chart-scroll">
-            <div
-              className="ysm4-chart"
-              role="img"
-              aria-label={
-                "Active demo requests in the next 14 days: " +
-                upcomingChart
-                  .map(
-                    (item) =>
-                      `${item.label}, ${item.count}`
-                  )
-                  .join("; ")
-              }
-            >
-              {upcomingChart.map((item) => (
-                <div
-                  key={item.date}
-                  className="ysm4-chart-column"
-                  title={`${item.label}: ${item.count} requests`}
-                >
-                  <strong>{item.count}</strong>
+          <p className="sm5-note">
+            Upcoming calendar pulse always
+            shows current active requests
+            for the next 14 days,
+            independently of the report
+            filters above.
+          </p>
+        </section>
 
-                  <div className="ysm4-chart-track">
-                    <span
+        <section className="sm5-panel">
+          <header className="sm5-panel-head">
+            <div>
+              <span className="sm5-eyebrow">
+                02 / SERVICE INTEREST
+              </span>
+
+              <h2>
+                What visitors <em>explore.</em>
+              </h2>
+            </div>
+
+            <FileSpreadsheet size={23} />
+          </header>
+
+          <div className="sm5-demand-list">
+            {demand.map((item, index) => (
+              <div key={item.id}>
+                <span>0{index + 1}</span>
+
+                <div>
+                  <strong>{item.name}</strong>
+
+                  <div className="sm5-track">
+                    <i
                       style={{
-                        height: `${
-                          (item.count / highestBar) *
+                        width: `${
+                          (item.total /
+                            maxDemand) *
                           100
                         }%`,
                       }}
                     />
                   </div>
-
-                  <small>{item.label}</small>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <p className="ysm4-chart-note">
-            This chart always shows the next 14 days
-            using all active demo requests, independently
-            of the reporting-period filter.
-          </p>
-        </section>
-
-        <section className="ysm3-panel">
-          <div className="ysm3-panel-heading">
-            <div>
-              <span className="ysm3-eyebrow">
-                REQUEST STATUS
-              </span>
-
-              <h2>
-                Booking <em>breakdown.</em>
-              </h2>
-            </div>
-          </div>
-
-          <div className="ysm4-status-total">
-            <strong>{completion}%</strong>
-            <span>
-              of requests are currently active
-              in this reporting period
-            </span>
-          </div>
-
-          <div className="ysm4-status-bar">
-            <span
-              style={{
-                width: `${completion}%`,
-              }}
-            />
-          </div>
-
-          <div className="ysm4-status-legend">
-            <div>
-              <CheckCircle2 size={18} />
-              <span>Active demo requests</span>
-              <strong>{stats.active}</strong>
-            </div>
-
-            <div>
-              <XCircle size={18} />
-              <span>Cancelled demo requests</span>
-              <strong>{stats.cancelled}</strong>
-            </div>
-          </div>
-
-          <div className="ysm4-status-notice">
-            <Clock3 size={19} />
-            <p>
-              Active means requested, not confirmed
-              or completed by a real dental clinic.
-            </p>
-          </div>
-        </section>
-      </div>
-
-      <div className="ysm4-report-two">
-        <section className="ysm3-panel">
-          <div className="ysm3-panel-heading">
-            <div>
-              <span className="ysm3-eyebrow">
-                TREATMENT REQUESTS
-              </span>
-
-              <h2>
-                Popular <em>services.</em>
-              </h2>
-            </div>
-
-            <Link
-              to="/staff/insights"
-              className="ysm3-panel-link"
-            >
-              Detailed Insights
-              <ArrowRight size={17} />
-            </Link>
-          </div>
-
-          <div className="ysm4-demand-list">
-            {topServices.map((item, index) => (
-              <div
-                className="ysm4-demand-item"
-                key={item.id}
-              >
-                <div className="ysm4-demand-head">
-                  <span className="ysm4-demand-rank">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-
-                  <div>
-                    <strong>{item.name}</strong>
-                    <small>{item.category}</small>
-                  </div>
-
-                  <b>{item.active}</b>
                 </div>
 
-                <div className="ysm4-demand-track">
-                  <span
-                    style={{
-                      width: `${
-                        (item.active / activeTotal) * 100
-                      }%`,
-                    }}
-                  />
-                </div>
+                <b>{item.total}</b>
               </div>
             ))}
-          </div>
-
-          <p className="ysm4-chart-note">
-            Active request counts only. These are
-            not completed treatment figures.
-          </p>
-        </section>
-
-        <section className="ysm3-panel">
-          <div className="ysm3-panel-heading">
-            <div>
-              <span className="ysm3-eyebrow">
-                SAMPLE TEAM
-              </span>
-
-              <h2>
-                Dentist <em>demand.</em>
-              </h2>
-            </div>
-          </div>
-
-          <div className="ysm4-dentist-list">
-            {dentistDemand.map((item) => (
-              <div
-                className="ysm4-dentist-item"
-                key={item.id}
-              >
-                <img
-                  src={item.image}
-                  alt={`Illustrative portrait for ${item.name}`}
-                  loading="lazy"
-                />
-
-                <div>
-                  <strong>{item.name}</strong>
-                  <small>{item.role}</small>
-                </div>
-
-                <span>{item.active}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <section className="ysm3-panel">
-        <div className="ysm3-panel-heading">
-          <div>
-            <span className="ysm3-eyebrow">
-              REQUEST DETAILS
-            </span>
-
-            <h2>
-              Selected-period <em>records.</em>
-            </h2>
           </div>
 
           <Link
-            to="/staff/appointments"
-            className="ysm3-panel-link"
+            className="sm5-inline"
+            to="/staff/insights"
           >
-            Appointment Desk
-            <ArrowRight size={17} />
+            EXPLORE TREATMENT INSIGHTS
+            <ArrowRight size={16} />
           </Link>
-        </div>
+        </section>
+      </div>
 
-        {upcoming.length === 0 ? (
-          <div className="ysm3-empty-state">
-            <CalendarDays size={33} />
+      <div className="sm5-report-grid">
+        <section className="sm5-panel">
+          <header className="sm5-panel-head">
+            <div>
+              <span className="sm5-eyebrow">
+                03 / APPOINTMENT JOURNAL
+              </span>
 
-            <h3>No active requests for this period.</h3>
+              <h2>
+                On the <em>horizon.</em>
+              </h2>
+            </div>
 
-            <p>
-              Try a different reporting period
-              or create a fictional appointment.
+            <CalendarDays size={23} />
+          </header>
+
+          {upcoming.length ? (
+            <div className="sm5-journal">
+              {upcoming.map((request) => (
+                <article key={request.id}>
+                  <time>
+                    {formatDate(request.date)}
+
+                    <small>
+                      {formatTime(request.time)}
+                    </small>
+                  </time>
+
+                  <div>
+                    <strong>
+                      {getTreatment(
+                        request.serviceId
+                      )?.name ||
+                        "Unknown treatment"}
+                    </strong>
+
+                    <small>
+                      {getDentist(
+                        request.doctorId
+                      )?.name ||
+                        "Unknown provider"}
+                      {" · DEMO REQUEST"}
+                    </small>
+                  </div>
+
+                  <ArrowUpRight size={17} />
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="sm5-empty">
+              No upcoming active requests
+              in the selected reporting view.
             </p>
-          </div>
-        ) : (
-          <div className="ysm4-record-list">
-            {upcoming.map((request) => (
-              <div
-                className="ysm4-record-row"
-                key={request.id}
-              >
-                <span className="ysm4-record-icon">
-                  <CalendarDays size={20} />
+          )}
+
+          <Link
+            className="sm5-inline"
+            to="/staff/appointments"
+          >
+            OPEN APPOINTMENT DESK
+            <ArrowRight size={16} />
+          </Link>
+        </section>
+
+        <section className="sm5-panel">
+          <header className="sm5-panel-head">
+            <div>
+              <span className="sm5-eyebrow">
+                04 / FICTIONAL PROVIDER LOAD
+              </span>
+
+              <h2>
+                A balanced <em>view.</em>
+              </h2>
+            </div>
+
+            <XCircle size={22} />
+          </header>
+
+          <div className="sm5-provider-ledger">
+            {dentistDemand.map((doctor) => (
+              <div key={doctor.id}>
+                <img
+                  src={doctor.image}
+                  alt=""
+                />
+
+                <span>
+                  <strong>{doctor.name}</strong>
+                  <small>
+                    {doctor.active} REQUESTED ·{" "}
+                    {doctor.total} TOTAL
+                  </small>
                 </span>
 
-                <div>
-                  <strong>
-                    {getTreatment(
-                      request.serviceId
-                    )?.name || "Dental visit"}
-                  </strong>
-
-                  <small>
-                    {request.alias} ·{" "}
-                    {getDentist(
-                      request.doctorId
-                    )?.name || "Sample dentist"}
-                  </small>
-                </div>
-
-                <span className="ysm4-record-time">
-                  {formatDate(request.date)}
-                  <small>
-                    {formatTime(request.time)}
-                  </small>
-                </span>
+                <b>{doctor.total}</b>
               </div>
             ))}
           </div>
-        )}
-      </section>
 
-      <div className="ysm3-dashboard-note">
-        <ChartColumn size={24} />
-
-        <div>
-          <strong>
-            Analytics represent fictional booking activity.
-          </strong>
-
-          <p>
-            No clinic revenue, payment collection,
-            actual procedures, clinical outcomes
-            or verified staff performance is reported.
+          <p className="sm5-note">
+            Counts describe browser-local
+            sample appointment interest,
+            not hours worked or real
+            clinician productivity.
           </p>
-        </div>
+        </section>
       </div>
+
+      <p className="sm5-privacy">
+        <ShieldCheck size={18} />
+        This is a design prototype using
+        fictional appointment requests.
+        No payment processor, real revenue
+        or patient database is connected.
+      </p>
     </div>
   );
 }

@@ -1,589 +1,95 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
-import {
-  Link,
-} from "react-router-dom";
-
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Check,
-  ClipboardEdit,
-  Eye,
-  EyeOff,
-  Pencil,
-  RotateCcw,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  Stethoscope,
-  X,
+  ArrowRight, ArrowUpRight, Eye, EyeOff,
+  Pencil, RotateCcw, Save, Search, ShieldCheck, SlidersHorizontal,
 } from "lucide-react";
+import { CATEGORIES, TREATMENTS, formatPeso } from "../../data/clinicData.js";
 
-import {
-  CATEGORIES,
-  TREATMENTS,
-  formatPeso,
-} from "../../data/clinicData.js";
-
-const DRAFTS_KEY =
-  "your-smile-treatment-drafts-v1";
-
-function loadDrafts() {
+const KEY = "your-smile-treatment-drafts-v1";
+function readDrafts() {
   try {
-    const data = JSON.parse(
-      window.localStorage.getItem(
-        DRAFTS_KEY
-      ) || "{}"
-    );
-
-    return data &&
-      typeof data === "object" &&
-      !Array.isArray(data)
-      ? data
-      : {};
-  } catch {
-    return {};
-  }
+    const value = JSON.parse(localStorage.getItem(KEY) || "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch { return {}; }
+}
+function combine(item, draft = {}) {
+  const numeric = Number(draft.priceFrom);
+  return {
+    ...item,
+    priceFrom: draft.priceFrom !== "" && draft.priceFrom !== undefined && Number.isFinite(numeric) && numeric >= 0 ? numeric : item.priceFrom,
+    short: typeof draft.short === "string" ? draft.short : item.short,
+    visible: typeof draft.visible === "boolean" ? draft.visible : true,
+    edited: Object.keys(draft).length > 0,
+  };
 }
 
 export default function TreatmentManagementPage() {
-  const [drafts, setDrafts] = useState(
-    loadDrafts
-  );
-
+  const [drafts, setDrafts] = useState(readDrafts);
+  const [selectedId, setSelectedId] = useState(TREATMENTS[0]?.id || "");
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState(
-    "All Treatments"
-  );
-
-  const [visibilityFilter, setVisibilityFilter] =
-    useState("all");
-
-  const [editingId, setEditingId] = useState(null);
-
+  const [category, setCategory] = useState("All Treatments");
+  const [visibility, setVisibility] = useState("all");
+  const [notice, setNotice] = useState("");
   useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        DRAFTS_KEY,
-        JSON.stringify(drafts)
-      );
-    } catch (error) {
-      console.warn(
-        "Treatment drafts could not be saved:",
-        error
-      );
-    }
+    try { localStorage.setItem(KEY, JSON.stringify(drafts)); }
+    catch { /* Storage may be disabled in private mode. */ }
   }, [drafts]);
-
-  function effectiveTreatment(item) {
-    const draft = drafts[item.id] || {};
-
-    const price = Number(draft.priceFrom);
-
-    return {
-      ...item,
-
-      priceFrom:
-        Number.isFinite(price) &&
-        price >= 0 &&
-        draft.priceFrom !== undefined
-          ? price
-          : item.priceFrom,
-
-      short:
-        typeof draft.short === "string"
-          ? draft.short
-          : item.short,
-
-      visible:
-        typeof draft.visible === "boolean"
-          ? draft.visible
-          : true,
-    };
-  }
-
-  const treatments = useMemo(
-    () =>
-      TREATMENTS.map((item) => {
-        const draft = drafts[item.id] || {};
-        const price = Number(draft.priceFrom);
-
-        return {
-          ...item,
-
-          priceFrom:
-            Number.isFinite(price) &&
-            price >= 0 &&
-            draft.priceFrom !== undefined
-              ? price
-              : item.priceFrom,
-
-          short:
-            typeof draft.short === "string"
-              ? draft.short
-              : item.short,
-
-          visible:
-            typeof draft.visible === "boolean"
-              ? draft.visible
-              : true,
-
-          edited: Object.keys(draft).length > 0,
-        };
-      }),
-    [drafts]
+  const treatments = useMemo(()=>TREATMENTS.map((t)=>combine(t,drafts[t.id])), [drafts]);
+  const selected = treatments.find((t)=>t.id===selectedId);
+  const visible = treatments.filter((t) =>
+    (category === "All Treatments" || t.category === category) &&
+    (visibility === "all" || (visibility === "shown" ? t.visible : !t.visible)) &&
+    `${t.name} ${t.short} ${t.category}`.toLowerCase().includes(query.toLowerCase().trim())
   );
+  const changed = treatments.filter((t)=>t.edited).length;
+  const hidden = treatments.filter((t)=>!t.visible).length;
 
-  const visible = useMemo(
-    () =>
-      treatments.filter((item) => {
-        const matchesCategory =
-          category === "All Treatments" ||
-          item.category === category;
-
-        const matchesVisibility =
-          visibilityFilter === "all" ||
-          (visibilityFilter === "visible"
-            ? item.visible
-            : !item.visible);
-
-        const q = query.toLowerCase().trim();
-
-        const matchesQuery =
-          !q ||
-          `${item.name} ${item.category} ${item.short}`
-            .toLowerCase()
-            .includes(q);
-
-        return (
-          matchesCategory &&
-          matchesVisibility &&
-          matchesQuery
-        );
-      }),
-    [treatments, category, visibilityFilter, query]
-  );
-
-  const draftCount = treatments.filter(
-    (item) => item.edited
-  ).length;
-
-  const hiddenCount = treatments.filter(
-    (item) => !item.visible
-  ).length;
-
-  function updateDraft(id, changes) {
-    setDrafts((current) => ({
-      ...current,
-      [id]: {
-        ...(current[id] || {}),
-        ...changes,
-      },
-    }));
+  function update(id, changes) {
+    setDrafts((current)=>({ ...current, [id]: { ...(current[id] || {}), ...changes } }));
+    setNotice("Local staff draft changed. The public treatment catalog remains unchanged.");
   }
-
   function resetOne(id) {
-    if (
-      !window.confirm(
-        "Reset the staff-only draft for this treatment?"
-      )
-    ) {
-      return;
-    }
-
-    setDrafts((current) => {
-      const next = { ...current };
-      delete next[id];
-      return next;
-    });
-
-    setEditingId(null);
+    if (!window.confirm("Reset the staff-only draft for this treatment?")) return;
+    setDrafts((current)=>{ const next = { ...current }; delete next[id]; return next; });
+    setNotice("Draft restored to original concept values.");
   }
-
   function resetAll() {
-    if (
-      !window.confirm(
-        "Reset all staff-only treatment drafts?"
-      )
-    ) {
-      return;
-    }
-
-    setDrafts({});
-    setEditingId(null);
+    if (!window.confirm("Reset all treatment drafts saved in this browser?")) return;
+    setDrafts({}); setNotice("All staff-only treatment drafts reset.");
   }
 
   return (
-    <div className="ysm3-page">
-      <div className="ysm3-page-heading">
-        <div>
-          <span className="ysm3-eyebrow">
-            SERVICE CATALOG / STAFF DRAFTS
-          </span>
-
-          <h1>
-            Thoughtful services.
-            <br />
-            <em>Beautifully presented.</em>
-          </h1>
-
-          <p>
-            Preview and organize sample treatment
-            catalog content for a future clinic website.
-          </p>
-        </div>
-
-        <Link
-          className="ysm3-primary-button"
-          to="/treatments"
-        >
-          <Eye size={18} />
-          Public Treatment Catalog
-          <ArrowUpRight size={16} />
-        </Link>
-      </div>
-
-      <div className="ysm3-desk-overview">
-        <div>
-          <Stethoscope size={22} />
-
-          <span>
-            <strong>{TREATMENTS.length}</strong>
-            <small>Catalog treatments</small>
-          </span>
-        </div>
-
-        <div>
-          <ClipboardEdit size={22} />
-
-          <span>
-            <strong>{draftCount}</strong>
-            <small>Edited local drafts</small>
-          </span>
-        </div>
-
-        <div>
-          <EyeOff size={22} />
-
-          <span>
-            <strong>{hiddenCount}</strong>
-            <small>Planned hidden items</small>
-          </span>
-        </div>
-      </div>
-
-      <section className="ysm3-panel">
-        <div className="ysm3-panel-heading">
-          <div>
-            <span className="ysm3-eyebrow">
-              MANAGE CATALOG DRAFTS
-            </span>
-
-            <h2>
-              Treatment <em>collection.</em>
-            </h2>
+    <div className="sm4-page">
+      <div className="sm4-page-heading"><div><span className="sm4-eyebrow">04 / THE TREATMENT MANAGEMENT ATELIER</span><h1>Precision in <em>every detail.</em></h1><p>Curate six fictional service previews, experiment with sample fees, and plan catalog visibility in browser-local drafts.</p></div><Link className="sm4-btn" to="/treatments">PUBLIC TREATMENT LIBRARY <ArrowUpRight size={17}/></Link></div>
+      <div className="sm4-strip-stats"><div><span>CONCEPT TREATMENTS</span><strong>{TREATMENTS.length}</strong></div><div><span>EDITED LOCAL DRAFTS</span><strong>{changed}</strong></div><div><span>PLANNED HIDDEN</span><strong>{hidden}</strong></div><div><span>PUBLIC CATALOG CHANGES</span><strong>00</strong></div></div>
+      <div className="sm4-treatment-layout">
+        <section className="sm4-panel sm4-treatment-index">
+          <div className="sm4-panel-top"><div><span className="sm4-eyebrow">01 / SERVICE COLLECTION</span><h2>The care <em>index.</em></h2></div><SlidersHorizontal size={23}/></div>
+          <div className="sm4-filters sm4-treatment-filters"><label className="sm4-search"><Search size={17}/><input type="search" placeholder="Find a service..." aria-label="Search treatments" value={query} onChange={(e)=>setQuery(e.target.value)}/></label><label><span>CATEGORY</span><select value={category} onChange={(e)=>setCategory(e.target.value)}>{CATEGORIES.map((c)=><option key={c}>{c}</option>)}</select></label><label><span>PLANNED VISIBILITY</span><select value={visibility} onChange={(e)=>setVisibility(e.target.value)}><option value="all">All</option><option value="shown">Visible</option><option value="hidden">Hidden</option></select></label></div>
+          <div className="sm4-treatment-list">
+            {visible.map((t)=><button type="button" key={t.id} className={`sm4-treatment-card ${selectedId===t.id?"is-selected":""}`} aria-pressed={selectedId===t.id} onClick={()=>setSelectedId(t.id)}>
+              <img src={t.image} alt=""/><span><small>{t.number} / {t.category.toUpperCase()}</small><strong>{t.name}</strong><small>{formatPeso(t.priceFrom)} · {t.duration} MINUTE SAMPLE</small></span><b className={t.visible?"":"is-hidden"}>{t.visible?"PLANNED VISIBLE":"PLANNED HIDDEN"}{t.edited?" · EDITED":""}</b><ArrowUpRight size={17}/>
+            </button>)}
+            {!visible.length && <div className="sm4-empty"><Search size={28}/><p>No services match these filters.</p><button type="button" onClick={()=>{setQuery("");setCategory("All Treatments");setVisibility("all");}}>RESET FILTERS <ArrowRight size={16}/></button></div>}
           </div>
-
-          <button
-            type="button"
-            className="ysm3-secondary-button"
-            onClick={resetAll}
-            disabled={draftCount === 0}
-          >
-            <RotateCcw size={17} />
-            Reset All Drafts
-          </button>
-        </div>
-
-        <div className="ysm3-catalog-filters">
-          <label className="ysm3-filter-search">
-            <Search size={18} />
-
-            <input
-              type="search"
-              aria-label="Search treatment drafts"
-              placeholder="Search treatments..."
-              value={query}
-              onChange={(event) =>
-                setQuery(event.target.value)
-              }
-            />
-          </label>
-
-          <label>
-            <span>CATEGORY</span>
-
-            <select
-              value={category}
-              onChange={(event) =>
-                setCategory(event.target.value)
-              }
-            >
-              {CATEGORIES.map((item) => (
-                <option key={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span>PLANNED VISIBILITY</span>
-
-            <select
-              value={visibilityFilter}
-              onChange={(event) =>
-                setVisibilityFilter(
-                  event.target.value
-                )
-              }
-            >
-              <option value="all">
-                All Draft Items
-              </option>
-
-              <option value="visible">
-                Planned Visible
-              </option>
-
-              <option value="hidden">
-                Planned Hidden
-              </option>
-            </select>
-          </label>
-        </div>
-
-        {visible.length === 0 ? (
-          <div className="ysm3-empty-state">
-            <Search size={31} />
-
-            <h3>No treatments match.</h3>
-
-            <p>
-              Try different filters or clear
-              the search field.
-            </p>
-
-            <button
-              type="button"
-              className="ysm3-secondary-button"
-              onClick={() => {
-                setQuery("");
-                setCategory("All Treatments");
-                setVisibilityFilter("all");
-              }}
-            >
-              Clear Filters
-              <ArrowRight size={16} />
-            </button>
-          </div>
-        ) : (
-          <div className="ysm3-catalog-grid">
-            {visible.map((item) => {
-              const isEditing =
-                editingId === item.id;
-
-              const preview = effectiveTreatment(
-                item
-              );
-
-              return (
-                <article
-                  className="ysm3-catalog-card"
-                  key={item.id}
-                >
-                  <div className="ysm3-catalog-photo">
-                    <img
-                      src={item.image}
-                      alt={`Illustrative ${item.name}`}
-                      loading="lazy"
-                    />
-
-                    <span>
-                      {item.category}
-                    </span>
-                  </div>
-
-                  <div className="ysm3-catalog-body">
-                    <div className="ysm3-catalog-card-top">
-                      <span className="ysm3-reference">
-                        {item.number} / 06
-                      </span>
-
-                      <span
-                        className={`ysm3-catalog-status ${
-                          !item.visible
-                            ? "is-hidden"
-                            : ""
-                        }`}
-                      >
-                        {item.visible
-                          ? "Planned Visible"
-                          : "Planned Hidden"}
-                      </span>
-                    </div>
-
-                    <h3>{item.name}</h3>
-
-                    <p>{item.short}</p>
-
-                    <div className="ysm3-catalog-meta">
-                      <span>
-                        Sample fee from
-                      </span>
-
-                      <strong>
-                        {formatPeso(item.priceFrom)}
-                      </strong>
-                    </div>
-
-                    <div className="ysm3-catalog-actions">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditingId(
-                            isEditing
-                              ? null
-                              : item.id
-                          )
-                        }
-                      >
-                        {isEditing ? (
-                          <X size={17} />
-                        ) : (
-                          <Pencil size={17} />
-                        )}
-
-                        {isEditing
-                          ? "Close Editor"
-                          : "Edit Draft"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          updateDraft(
-                            item.id,
-                            {
-                              visible: !item.visible,
-                            }
-                          )
-                        }
-                      >
-                        {item.visible ? (
-                          <EyeOff size={17} />
-                        ) : (
-                          <Eye size={17} />
-                        )}
-
-                        {item.visible
-                          ? "Plan Hide"
-                          : "Plan Show"}
-                      </button>
-                    </div>
-
-                    {isEditing && (
-                      <div className="ysm3-catalog-editor">
-                        <span className="ysm3-eyebrow">
-                          STAFF-ONLY DRAFT
-                        </span>
-
-                        <label>
-                          <span>
-                            SAMPLE STARTING FEE (PHP)
-                          </span>
-
-                          <input
-                            type="number"
-                            min="0"
-                            step="50"
-                            value={preview.priceFrom}
-                            onChange={(event) =>
-                              updateDraft(
-                                item.id,
-                                {
-                                  priceFrom:
-                                    event.target.value === ""
-                                      ? ""
-                                      : Number(
-                                          event.target.value
-                                        ),
-                                }
-                              )
-                            }
-                          />
-                        </label>
-
-                        <label>
-                          <span>
-                            SHORT TREATMENT DESCRIPTION
-                          </span>
-
-                          <textarea
-                            rows="4"
-                            maxLength="180"
-                            value={preview.short}
-                            onChange={(event) =>
-                              updateDraft(
-                                item.id,
-                                {
-                                  short:
-                                    event.target.value,
-                                }
-                              )
-                            }
-                          />
-                        </label>
-
-                        <div className="ysm3-catalog-editor-bottom">
-                          <span>
-                            <Check size={16} />
-                            Auto-saved locally
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              resetOne(item.id)
-                            }
-                          >
-                            <RotateCcw size={15} />
-                            Reset Item
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <div className="ysm3-dashboard-note">
-        <ShieldCheck size={23} />
-
-        <div>
-          <strong>
-            Draft changes do not publish to the public website.
-          </strong>
-
-          <p>
-            These edits are saved only in this
-            browser for portfolio demonstration.
-            The original public treatment catalog
-            continues to use the sample data
-            from clinicData.js until a real
-            content management system is implemented.
-          </p>
-        </div>
+          <button type="button" className="sm4-reset-all" disabled={!changed} onClick={resetAll}><RotateCcw size={16}/> RESET ALL STAFF DRAFTS</button>
+        </section>
+        <aside className="sm4-panel sm4-treatment-editor">
+          {selected && <>
+            <div className="sm4-panel-top"><div><span className="sm4-eyebrow">02 / SELECTED SERVICE FOLIO</span><h2>Make it <em>clearer.</em></h2></div><Pencil size={23}/></div>
+            <div className="sm4-editor-photo"><img src={selected.image} alt={`Illustrative ${selected.name}`}/><span>EDITORIAL SERVICE / {selected.number}</span></div>
+            <h3>{selected.name}</h3><p className="sm4-fine">Draft changes are private to this browser. The public catalog still uses the original source configuration.</p>
+            <label className="sm4-editor-field"><span>ILLUSTRATIVE STARTING FEE / PHP</span><input type="number" min="0" max="1000000" step="50" value={drafts[selected.id]?.priceFrom ?? selected.priceFrom} onChange={(e)=>update(selected.id,{priceFrom:e.target.value})}/></label>
+            <label className="sm4-editor-field"><span>SHORT INFORMATIONAL DESCRIPTION</span><textarea rows={4} maxLength={180} value={selected.short} onChange={(e)=>update(selected.id,{short:e.target.value})}/></label>
+            <div className="sm4-editor-check"><span><b>PLANNED PUBLIC VISIBILITY</b><small>This is a draft preview; it does not hide the public page.</small></span><button type="button" className={selected.visible?"is-on":""} aria-pressed={selected.visible} onClick={()=>update(selected.id,{visible:!selected.visible})}>{selected.visible?<Eye size={17}/>:<EyeOff size={17}/>} {selected.visible?"SHOW":"HIDE"}</button></div>
+            <div className="sm4-editor-actions"><span><Save size={17}/> AUTO-SAVED LOCAL DRAFT</span><button type="button" disabled={!selected.edited} onClick={()=>resetOne(selected.id)}><RotateCcw size={15}/> RESET ITEM</button></div>
+            {notice && <p role="status" className="sm4-alert">{notice}</p>}
+            <Link className="sm4-inline" to={`/treatments/${selected.id}`}>VIEW ORIGINAL TREATMENT JOURNAL <ArrowUpRight size={16}/></Link>
+          </>}
+        </aside>
       </div>
+      <p className="sm4-disclosure"><ShieldCheck size={17}/> Sample prices and descriptions are portfolio placeholders, not actual clinical quotations. Changes to public clinic information require verified content and source updates.</p>
     </div>
   );
 }

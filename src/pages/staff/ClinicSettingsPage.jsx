@@ -1,23 +1,29 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 
 import {
-  ArrowRight,
-  CheckCircle2,
+  ArrowUpRight,
   Clock3,
-  MapPin,
   RotateCcw,
   Save,
-  Settings2,
   ShieldCheck,
-  Sparkles,
+  Smile,
+  SlidersHorizontal,
 } from "lucide-react";
 
-import { BRAND, TIME_SLOTS, formatTime } from "../../data/clinicData.js";
+import {
+  BRAND,
+  TIME_SLOTS,
+  DENTISTS,
+  formatTime,
+} from "../../data/clinicData.js";
+
+import "../../styles/smile-staff-batch5.css";
 
 export const CLINIC_PROFILE_KEY =
   "your-smile-clinic-profile-draft-v1";
 
-const DEFAULT_PROFILE = {
+const INITIAL = {
   clinicName: "YOUR SMILE.",
   tagline: BRAND.tagline,
   locationNote: "",
@@ -28,73 +34,62 @@ const DEFAULT_PROFILE = {
   internalNotes: "",
 };
 
-function readProfile() {
+const LIMITS = {
+  clinicName: 90,
+  tagline: 150,
+  locationNote: 150,
+  email: 160,
+  phone: 30,
+  about: 700,
+  internalNotes: 700,
+};
+
+function readDraft() {
   try {
-    const raw = JSON.parse(
-      localStorage.getItem(CLINIC_PROFILE_KEY) || "{}"
+    const data = JSON.parse(
+      localStorage.getItem(
+        CLINIC_PROFILE_KEY
+      ) || "null"
     );
 
-    const valid =
-      raw &&
-      typeof raw === "object" &&
-      !Array.isArray(raw)
-        ? raw
-        : {};
+    if (
+      !data ||
+      typeof data !== "object" ||
+      Array.isArray(data)
+    ) {
+      return { ...INITIAL };
+    }
 
-    const result = { ...DEFAULT_PROFILE };
+    const safe = { ...INITIAL };
 
-    for (const key of Object.keys(DEFAULT_PROFILE)) {
-      if (typeof valid[key] === "string") {
-        result[key] = valid[key];
+    for (const key of Object.keys(INITIAL)) {
+      if (typeof data[key] === "string") {
+        safe[key] = data[key].slice(
+          0,
+          LIMITS[key]
+        );
       }
     }
 
-    return result;
+    return safe;
   } catch {
-    return { ...DEFAULT_PROFILE };
+    return { ...INITIAL };
   }
 }
 
-function SettingsField({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = "text",
-  maxLength = 150,
-}) {
-  return (
-    <label className="ysm4-setting-field">
-      <span>{label}</span>
-
-      <input
-        type={type}
-        value={value}
-        maxLength={maxLength}
-        placeholder={placeholder}
-        onChange={(event) =>
-          onChange(event.target.value)
-        }
-      />
-    </label>
-  );
-}
-
 export default function ClinicSettingsPage() {
-  const [savedProfile, setSavedProfile] = useState(readProfile);
+  const [saved, setSaved] =
+    useState(readDraft);
 
-  const [draft, setDraft] = useState(
-    () => ({ ...savedProfile })
-  );
+  const [draft, setDraft] =
+    useState(readDraft);
 
-  const [message, setMessage] = useState("");
+  const [notice, setNotice] =
+    useState("");
 
-  const dirty = useMemo(
-    () =>
-      JSON.stringify(draft) !==
-      JSON.stringify(savedProfile),
-    [draft, savedProfile]
-  );
+  const changed =
+    JSON.stringify(draft) !==
+    JSON.stringify(saved);
 
   function update(key, value) {
     setDraft((current) => ({
@@ -102,19 +97,21 @@ export default function ClinicSettingsPage() {
       [key]: value,
     }));
 
-    setMessage("");
+    setNotice("");
   }
 
   function save(event) {
     event.preventDefault();
 
     if (!draft.clinicName.trim()) {
-      setMessage("Clinic concept name cannot be empty.");
+      setNotice(
+        "Please enter a draft clinic name."
+      );
       return;
     }
 
     const next = Object.fromEntries(
-      Object.keys(DEFAULT_PROFILE).map((key) => [
+      Object.keys(INITIAL).map((key) => [
         key,
         draft[key].trim(),
       ])
@@ -126,304 +123,399 @@ export default function ClinicSettingsPage() {
         JSON.stringify(next)
       );
 
-      setSavedProfile(next);
+      setSaved(next);
       setDraft(next);
-      setMessage("Draft saved in this browser.");
+
+      setNotice(
+        "Business profile draft saved locally. Public website data is unchanged."
+      );
     } catch {
-      setMessage(
-        "Browser storage is unavailable. The draft was not saved."
+      setNotice(
+        "Local storage is unavailable. Draft could not be saved."
       );
     }
   }
 
-  function discard() {
-    setDraft({ ...savedProfile });
-    setMessage("Unsaved edits discarded.");
-  }
-
-  function resetProfile() {
+  function reset() {
     if (
       !window.confirm(
-        "Reset the clinic profile draft to the original sample values?"
+        "Reset the clinic profile DRAFT to the original concept values?"
       )
     ) {
       return;
     }
 
     try {
-      localStorage.removeItem(CLINIC_PROFILE_KEY);
+      localStorage.removeItem(
+        CLINIC_PROFILE_KEY
+      );
 
-      setSavedProfile({ ...DEFAULT_PROFILE });
-      setDraft({ ...DEFAULT_PROFILE });
+      setSaved({ ...INITIAL });
+      setDraft({ ...INITIAL });
 
-      setMessage("Clinic profile draft reset.");
+      setNotice(
+        "The local profile draft has been reset."
+      );
     } catch {
-      setMessage(
-        "Unable to reset browser-local settings."
+      setNotice(
+        "Unable to reset the draft in this browser."
       );
     }
   }
 
+  const fields = [
+    [
+      "clinicName",
+      "CLINIC DISPLAY NAME",
+      "text",
+      "YOUR SMILE.",
+    ],
+    [
+      "tagline",
+      "BRAND TAGLINE",
+      "text",
+      "Your clinic tagline",
+    ],
+    [
+      "email",
+      "BUSINESS CONTACT EMAIL",
+      "email",
+      "sample@example.com",
+    ],
+    [
+      "phone",
+      "BUSINESS CONTACT NUMBER",
+      "tel",
+      "+63 ...",
+    ],
+    [
+      "locationNote",
+      "LOCATION / NOT VERIFIED",
+      "text",
+      "Proposed city or address",
+    ],
+  ];
+
   return (
-    <div className="ysm3-page ysm4-page">
-      <div className="ysm3-page-heading">
+    <div className="sm5-page">
+      <section className="sm5-intro sm5-intro--peach">
         <div>
-          <span className="ysm3-eyebrow">
-            WORKSPACE CONFIGURATION / BATCH 4
+          <span className="sm5-eyebrow">
+            07 / THE CONFIGURATION ATELIER
           </span>
 
           <h1>
-            The details that
-            <br />
-            make it <em>your own.</em>
+            Every detail <em>considered.</em>
           </h1>
 
           <p>
-            Customize a sample clinic profile
-            without changing the public website.
+            Prepare a fictional clinic identity
+            and inspect the system's actual
+            appointment rules. Profile edits
+            are saved only in this browser.
           </p>
+
+          <Link to="/staff/data">
+            OPEN THE DATA VAULT
+            <ArrowUpRight size={17} />
+          </Link>
         </div>
 
-        <button
-          type="button"
-          className="ysm3-secondary-button"
-          onClick={resetProfile}
+        <div
+          className="sm5-intro-art"
+          aria-hidden="true"
         >
-          <RotateCcw size={17} />
-          Reset Profile
-        </button>
-      </div>
+          <span className="sm5-orbit" />
+          <strong>07</strong>
 
-      <div className="ysm4-settings-layout">
-        <form
-          className="ysm3-panel ysm4-settings-form"
-          onSubmit={save}
-        >
-          <div className="ysm3-panel-heading">
+          <small>
+            THE PROFILE ATELIER / YOUR SMILE.
+          </small>
+        </div>
+      </section>
+
+      <div className="sm5-settings-grid">
+        <section className="sm5-panel">
+          <header className="sm5-panel-head">
             <div>
-              <span className="ysm3-eyebrow">
-                CLINIC CONCEPT IDENTITY
+              <span className="sm5-eyebrow">
+                01 / THE BUSINESS IDENTITY DRAFT
               </span>
 
               <h2>
-                Profile <em>settings.</em>
+                The clinic <em>profile.</em>
               </h2>
             </div>
 
-            <Settings2
-              size={25}
-              color="#6B9985"
-            />
-          </div>
+            <SlidersHorizontal size={23} />
+          </header>
 
-          <div className="ysm4-settings-field-grid">
-            <SettingsField
-              label="CLINIC CONCEPT NAME"
-              value={draft.clinicName}
-              onChange={(value) =>
-                update("clinicName", value)
-              }
-              placeholder="Your clinic name"
-              maxLength={90}
-            />
+          <p className="sm5-body-copy">
+            These values are saved as a staff
+            concept draft. They do not update
+            the public header, contact page,
+            appointment hours or treatment prices.
+          </p>
 
-            <SettingsField
-              label="TAGLINE"
-              value={draft.tagline}
-              onChange={(value) =>
-                update("tagline", value)
-              }
-              placeholder="A welcoming tagline"
-              maxLength={150}
-            />
+          <form
+            className="sm5-settings-form"
+            onSubmit={save}
+          >
+            {fields.map(
+              ([key, label, type, hint]) => (
+                <label key={key}>
+                  {label}
 
-            <SettingsField
-              label="LOCATION NOTE"
-              value={draft.locationNote}
-              onChange={(value) =>
-                update("locationNote", value)
-              }
-              placeholder="e.g. Proposed Metro Manila branch"
-              maxLength={150}
-            />
+                  <input
+                    type={type}
+                    maxLength={LIMITS[key]}
+                    required={
+                      key === "clinicName"
+                    }
+                    value={draft[key]}
+                    placeholder={hint}
+                    onChange={(event) =>
+                      update(
+                        key,
+                        event.target.value
+                      )
+                    }
+                  />
+                </label>
+              )
+            )}
 
-            <SettingsField
-              label="SAMPLE CONTACT NUMBER"
-              value={draft.phone}
-              onChange={(value) =>
-                update("phone", value)
-              }
-              placeholder="Leave blank for the concept"
-              maxLength={40}
-            />
+            <label className="sm5-wide">
+              ABOUT THE CONCEPT
 
-            <SettingsField
-              label="SAMPLE EMAIL"
-              type="email"
-              value={draft.email}
-              onChange={(value) =>
-                update("email", value)
-              }
-              placeholder="Leave blank for the concept"
-              maxLength={150}
-            />
-          </div>
+              <textarea
+                rows={4}
+                maxLength={LIMITS.about}
+                value={draft.about}
+                onChange={(event) =>
+                  update(
+                    "about",
+                    event.target.value
+                  )
+                }
+              />
+            </label>
 
-          <label className="ysm4-setting-field">
-            <span>ABOUT THE CLINIC CONCEPT</span>
+            <label className="sm5-wide">
+              PRIVATE DEMO NOTES
 
-            <textarea
-              rows="5"
-              maxLength={700}
-              value={draft.about}
-              onChange={(event) =>
-                update("about", event.target.value)
-              }
-            />
-          </label>
+              <textarea
+                rows={3}
+                maxLength={
+                  LIMITS.internalNotes
+                }
+                value={draft.internalNotes}
+                placeholder="Internal draft notes — avoid real patient details"
+                onChange={(event) =>
+                  update(
+                    "internalNotes",
+                    event.target.value
+                  )
+                }
+              />
+            </label>
 
-          <label className="ysm4-setting-field">
-            <span>INTERNAL CONCEPT NOTES</span>
+            <div className="sm5-form-actions sm5-wide">
+              <button
+                type="submit"
+                className="sm5-button"
+              >
+                <Save size={17} />
+                SAVE BROWSER DRAFT
+              </button>
 
-            <textarea
-              rows="4"
-              maxLength={700}
-              placeholder="Design improvements, launch ideas, content notes..."
-              value={draft.internalNotes}
-              onChange={(event) =>
-                update(
-                  "internalNotes",
-                  event.target.value
-                )
-              }
-            />
-          </label>
+              <button
+                type="button"
+                className="sm5-quiet-button"
+                disabled={!changed}
+                onClick={() => {
+                  setDraft({ ...saved });
+                  setNotice(
+                    "Unsaved edits discarded."
+                  );
+                }}
+              >
+                <RotateCcw size={16} />
+                DISCARD EDITS
+              </button>
 
-          {message && (
-            <div
-              className="ysm4-settings-message"
+              <small>
+                {changed
+                  ? "UNSAVED CHANGES"
+                  : "DRAFT UP TO DATE"}
+              </small>
+            </div>
+          </form>
+
+          {notice && (
+            <p
+              className="sm5-feedback"
               role="status"
             >
-              <CheckCircle2 size={18} />
-              {message}
-            </div>
+              {notice}
+            </p>
           )}
+        </section>
 
-          <div className="ysm4-settings-actions">
-            <button
-              type="submit"
-              className="ysm3-primary-button"
-              disabled={!dirty}
-            >
-              <Save size={18} />
-              Save Profile Draft
-            </button>
-
-            <button
-              type="button"
-              className="ysm3-secondary-button"
-              disabled={!dirty}
-              onClick={discard}
-            >
-              Discard Changes
-            </button>
-          </div>
-        </form>
-
-        <aside className="ysm4-settings-side">
-          <div className="ysm4-brand-preview">
-            <span className="ysm3-eyebrow">
-              PREVIEW / INTERNAL ONLY
+        <aside className="sm5-settings-aside">
+          <section className="sm5-preview">
+            <span className="sm5-eyebrow">
+              02 / LIVE LOCAL PREVIEW
             </span>
 
-            <span className="ysm4-preview-symbol">
-              <Sparkles size={27} />
-            </span>
+            <Smile
+              size={32}
+              strokeWidth={1.3}
+            />
 
             <h2>
-              {draft.clinicName || "YOUR SMILE."}
+              {draft.clinicName ||
+                "YOUR SMILE."}
             </h2>
 
             <p>
               {draft.tagline ||
-                "A brighter smile. A gentler experience."}
+                "A thoughtful dental experience."}
             </p>
-
-            <div className="ysm4-preview-location">
-              <MapPin size={17} />
-              {draft.locationNote ||
-                "No physical location configured"}
-            </div>
 
             <small>
-              This preview is not published
-              to the customer-facing website.
+              {[
+                draft.email,
+                draft.phone,
+                draft.locationNote,
+              ]
+                .filter(Boolean)
+                .join(" · ") ||
+                "BUSINESS CONTACTS NOT SET"}
             </small>
-          </div>
 
-          <div className="ysm3-panel ysm4-policy-panel">
-            <span className="ysm3-eyebrow">
-              DEMO APPOINTMENT POLICY
+            <b>
+              UNPUBLISHED DEMO PROFILE
+            </b>
+          </section>
+
+          <section className="sm5-panel">
+            <header className="sm5-panel-head">
+              <div>
+                <span className="sm5-eyebrow">
+                  03 / REQUEST ENGINE POLICIES
+                </span>
+
+                <h2>
+                  The actual <em>rules.</em>
+                </h2>
+              </div>
+
+              <Clock3 size={22} />
+            </header>
+
+            <div className="sm5-rules">
+              <div>
+                <span>
+                  SAMPLE PROVIDERS
+                </span>
+                <strong>
+                  {DENTISTS.length}
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  REQUEST STATUS OPTIONS
+                </span>
+                <strong>
+                  Requested / Cancelled
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  DEMO OPERATING DAYS
+                </span>
+                <strong>
+                  Monday – Saturday
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  VISIBLE TIME OPTIONS
+                </span>
+
+                <strong>
+                  {TIME_SLOTS.map(
+                    formatTime
+                  ).join(" · ")}
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  ADVANCE WINDOW
+                </span>
+                <strong>
+                  Next 180 days
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  PAYMENT GATEWAY
+                </span>
+                <strong>
+                  NOT CONNECTED
+                </strong>
+              </div>
+            </div>
+
+            <p className="sm5-note">
+              This panel documents the
+              existing App.jsx booking rules.
+              They cannot be changed by
+              editing the profile draft.
+            </p>
+          </section>
+
+          <section className="sm5-panel sm5-settings-reset">
+            <span className="sm5-eyebrow">
+              04 / LOCAL DRAFT CONTROL
             </span>
 
-            <h3>
-              The scheduling <em>rules.</em>
-            </h3>
+            <h2>
+              Return to the <em>original.</em>
+            </h2>
 
-            <div className="ysm4-policy-row">
-              <span>Open sample days</span>
-              <strong>Monday–Saturday</strong>
-            </div>
-
-            <div className="ysm4-policy-row">
-              <span>Closed sample day</span>
-              <strong>Sunday</strong>
-            </div>
-
-            <div className="ysm4-policy-row">
-              <span>Advance request window</span>
-              <strong>1–180 days</strong>
-            </div>
-
-            <div className="ysm4-policy-row">
-              <span>Daily demo slots</span>
-              <strong>{TIME_SLOTS.length}</strong>
-            </div>
-
-            <p>
-              Sample appointment times:{" "}
-              {TIME_SLOTS.map(formatTime).join(", ")}.
+            <p className="sm5-body-copy">
+              Reset only the locally saved
+              profile draft. Appointments
+              and treatment drafts
+              are preserved.
             </p>
 
-            <div className="ysm4-policy-note">
-              <Clock3 size={18} />
-
-              <span>
-                These rules come from the existing
-                frontend booking engine. They are
-                read-only in Batch 4.
-              </span>
-            </div>
-          </div>
+            <button
+              type="button"
+              className="sm5-quiet-button"
+              onClick={reset}
+            >
+              <RotateCcw size={17} />
+              RESET PROFILE DRAFT
+            </button>
+          </section>
         </aside>
       </div>
 
-      <div className="ysm3-dashboard-note">
-        <ShieldCheck size={23} />
-
-        <div>
-          <strong>
-            Settings are drafts, not real clinic configuration.
-          </strong>
-
-          <p>
-            No public page, verified business address,
-            contact endpoint, appointment policy or
-            booking engine setting is changed by
-            this editor.
-          </p>
-        </div>
-      </div>
+      <p className="sm5-privacy">
+        <ShieldCheck size={18} />
+        No authentication, verified clinic
+        credentials, live address, patient
+        records, or cross-device synchronization.
+        {" "}{BRAND.developer}
+      </p>
     </div>
   );
 }

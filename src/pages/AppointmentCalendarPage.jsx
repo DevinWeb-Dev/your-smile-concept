@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import {
@@ -6,13 +6,11 @@ import {
   ArrowUpRight,
   CalendarCheck2,
   CalendarDays,
-  CheckCircle2,
+  Check,
   ChevronLeft,
   ChevronRight,
   Clock3,
   ShieldCheck,
-  Sparkles,
-  UserRound,
 } from "lucide-react";
 
 import {
@@ -24,634 +22,749 @@ import {
   formatTime,
 } from "../data/clinicData.js";
 
+import "../styles/smile-people-architectural.css";
+
 function dateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
 }
 
-function addDays(days) {
-  const result = new Date();
-  result.setHours(12, 0, 0, 0);
-  result.setDate(result.getDate() + days);
-  return result;
+function offset(days) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+
+  return date;
 }
 
-function firstAvailableDate() {
-  const result = addDays(1);
+function nextOpenDay() {
+  const date = offset(1);
 
-  while (result.getDay() === 0) {
-    result.setDate(result.getDate() + 1);
+  while (date.getDay() === 0) {
+    date.setDate(date.getDate() + 1);
   }
 
-  return dateKey(result);
+  return dateKey(date);
 }
 
-function makeCalendar(year, month) {
-  const first = new Date(year, month, 1, 12);
-  const offset = first.getDay();
+function monthCells(year, month) {
+  const padding = new Date(
+    year,
+    month,
+    1,
+    12
+  ).getDay();
 
   return Array.from({ length: 42 }, (_, index) => {
     const date = new Date(
       year,
       month,
-      index - offset + 1,
+      index - padding + 1,
       12
     );
 
     return {
       key: dateKey(date),
-      day: date.getDate(),
-      weekday: date.getDay(),
-      currentMonth: date.getMonth() === month,
+      num: date.getDate(),
+      day: date.getDay(),
+      isMonth: date.getMonth() === month,
     };
   });
 }
 
+function validated(items, id) {
+  return items.some((item) => item.id === id)
+    ? id
+    : items[0].id;
+}
+
 export default function AppointmentCalendarPage({
-  requests,
+  requests = [],
   onCreateRequest,
 }) {
   const [params] = useSearchParams();
 
-  const defaultService = TREATMENTS.some(
-    (item) => item.id === params.get("service")
-  )
-    ? params.get("service")
-    : TREATMENTS[0].id;
-
-  const defaultDoctor = DENTISTS.some(
-    (item) => item.id === params.get("doctor")
-  )
-    ? params.get("doctor")
-    : DENTISTS[0].id;
-
-  const [serviceId, setServiceId] = useState(defaultService);
-  const [doctorId, setDoctorId] = useState(defaultDoctor);
-  const [selectedDate, setSelectedDate] = useState(
-    firstAvailableDate
+  const [serviceId, setServiceId] = useState(() =>
+    validated(TREATMENTS, params.get("service"))
   );
-  const [selectedTime, setSelectedTime] = useState("");
+
+  const [doctorId, setDoctorId] = useState(() =>
+    validated(DENTISTS, params.get("doctor"))
+  );
+
+  const [chosenDate, setChosenDate] = useState(
+    nextOpenDay
+  );
+
+  const [slot, setSlot] = useState("");
   const [alias, setAlias] = useState("");
   const [error, setError] = useState("");
-  const [savedId, setSavedId] = useState("");
+  const [saved, setSaved] = useState("");
 
-  const [visibleMonth, setVisibleMonth] = useState(() => {
-    const date = new Date(`${firstAvailableDate()}T12:00:00`);
+  const [calendarMonth, setCalendarMonth] = useState(
+    () => {
+      const date = new Date(
+        `${nextOpenDay()}T12:00:00`
+      );
 
-    return {
-      year: date.getFullYear(),
-      month: date.getMonth(),
-    };
-  });
-
-  const minimumDate = dateKey(addDays(1));
-  const maximumDate = dateKey(addDays(180));
-
-  const treatment = TREATMENTS.find(
-    (item) => item.id === serviceId
+      return {
+        year: date.getFullYear(),
+        month: date.getMonth(),
+      };
+    }
   );
 
-  const doctor = DENTISTS.find(
-    (item) => item.id === doctorId
-  );
+  const today = dateKey(offset(1));
+  const last = dateKey(offset(180));
 
-  useEffect(() => {
-    const serviceParam = params.get("service");
-    const doctorParam = params.get("doctor");
+  const treatment =
+    TREATMENTS.find(
+      (item) => item.id === serviceId
+    ) || TREATMENTS[0];
 
-    if (
-      TREATMENTS.some(
-        (item) => item.id === serviceParam
-      )
-    ) {
-      setServiceId(serviceParam);
-    }
-
-    if (
-      DENTISTS.some(
-        (item) => item.id === doctorParam
-      )
-    ) {
-      setDoctorId(doctorParam);
-    }
-  }, [params]);
+  const doctor =
+    DENTISTS.find(
+      (item) => item.id === doctorId
+    ) || DENTISTS[0];
 
   const cells = useMemo(
-    () => makeCalendar(
-      visibleMonth.year,
-      visibleMonth.month
-    ),
-    [visibleMonth.year, visibleMonth.month]
+    () =>
+      monthCells(
+        calendarMonth.year,
+        calendarMonth.month
+      ),
+    [calendarMonth]
   );
 
-  const occupied = useMemo(() => {
-    return requests
-      .filter(
+  const reservations = useMemo(
+    () =>
+      requests.filter(
         (item) =>
           item.status === "requested" &&
-          item.doctorId === doctorId &&
-          item.date === selectedDate
+          item.doctorId === doctorId
+      ),
+    [requests, doctorId]
+  );
+
+  const timesUsed = new Set(
+    reservations
+      .filter(
+        (item) =>
+          item.date === chosenDate
       )
-      .map((item) => item.time);
-  }, [requests, doctorId, selectedDate]);
+      .map((item) => item.time)
+  );
 
-  const takenDates = useMemo(() => {
-    const bookings = new Map();
+  const countByDay = useMemo(() => {
+    const records = new Map();
 
-    requests.forEach((item) => {
-      if (
-        item.status !== "requested" ||
-        item.doctorId !== doctorId
-      ) {
-        return;
+    for (const request of reservations) {
+      if (!records.has(request.date)) {
+        records.set(request.date, new Set());
       }
 
-      if (!bookings.has(item.date)) {
-        bookings.set(item.date, new Set());
-      }
+      records.get(request.date).add(request.time);
+    }
 
-      bookings.get(item.date).add(item.time);
-    });
+    return records;
+  }, [reservations]);
 
-    return bookings;
-  }, [requests, doctorId]);
+  const startMonth = new Date(
+    `${today}T12:00:00`
+  );
 
-  const monthTitle = new Date(
-    visibleMonth.year,
-    visibleMonth.month,
+  const endMonth = new Date(
+    `${last}T12:00:00`
+  );
+
+  const currentNumber =
+    calendarMonth.year * 12 +
+    calendarMonth.month;
+
+  const minNumber =
+    startMonth.getFullYear() * 12 +
+    startMonth.getMonth();
+
+  const maxNumber =
+    endMonth.getFullYear() * 12 +
+    endMonth.getMonth();
+
+  const monthLabel = new Date(
+    calendarMonth.year,
+    calendarMonth.month,
     1
   ).toLocaleDateString("en-PH", {
     month: "long",
     year: "numeric",
   });
 
-  const currentMonthNumber =
-    visibleMonth.year * 12 + visibleMonth.month;
+  const chosenIsValid =
+    chosenDate >= today &&
+    chosenDate <= last &&
+    new Date(
+      `${chosenDate}T12:00:00`
+    ).getDay() !== 0;
 
-  const minDateObject = new Date(
-    `${minimumDate}T12:00:00`
-  );
-
-  const maxDateObject = new Date(
-    `${maximumDate}T12:00:00`
-  );
-
-  const minimumMonth =
-    minDateObject.getFullYear() * 12 +
-    minDateObject.getMonth();
-
-  const maximumMonth =
-    maxDateObject.getFullYear() * 12 +
-    maxDateObject.getMonth();
-
-  function shiftMonth(amount) {
-    const next = new Date(
-      visibleMonth.year,
-      visibleMonth.month + amount,
-      1
-    );
-
-    const nextValue =
-      next.getFullYear() * 12 + next.getMonth();
-
-    if (
-      nextValue < minimumMonth ||
-      nextValue > maximumMonth
-    ) {
-      return;
-    }
-
-    setVisibleMonth({
-      year: next.getFullYear(),
-      month: next.getMonth(),
-    });
-  }
-
-  function changeDate(day) {
-    setSelectedDate(day);
-    setSelectedTime("");
+  function changeDate(next) {
+    setChosenDate(next);
+    setSlot("");
     setError("");
-    setSavedId("");
+    setSaved("");
   }
 
   function changeDoctor(id) {
     setDoctorId(id);
-    setSelectedTime("");
+    setSlot("");
     setError("");
-    setSavedId("");
+    setSaved("");
+  }
+
+  function shiftMonth(amount) {
+    const date = new Date(
+      calendarMonth.year,
+      calendarMonth.month + amount,
+      1
+    );
+
+    const number =
+      date.getFullYear() * 12 +
+      date.getMonth();
+
+    if (
+      number < minNumber ||
+      number > maxNumber
+    ) {
+      return;
+    }
+
+    setCalendarMonth({
+      year: date.getFullYear(),
+      month: date.getMonth(),
+    });
   }
 
   function submit(event) {
     event.preventDefault();
 
-    if (!selectedTime) {
+    setError("");
+    setSaved("");
+
+    if (
+      !chosenIsValid ||
+      !slot ||
+      timesUsed.has(slot)
+    ) {
       setError(
-        "Please select an available demo time slot."
+        "Select a valid date and available demo time."
       );
       return;
     }
 
     const result = onCreateRequest({
-      alias,
+      alias: alias.trim(),
       serviceId,
       doctorId,
-      date: selectedDate,
-      time: selectedTime,
+      date: chosenDate,
+      time: slot,
     });
 
-    if (!result.ok) {
-      setError(result.error);
-      setSavedId("");
+    if (!result?.ok) {
+      setError(
+        result?.error ||
+          "Could not save this demo request."
+      );
       return;
     }
 
-    setSavedId(result.id);
+    setSaved(result.id);
     setAlias("");
-    setSelectedTime("");
-    setError("");
+    setSlot("");
   }
 
   return (
-    <div className="ys2-calendar-page">
-      <section className="ys2-simple-hero">
-        <div className="ys-container">
-          <span className="ys-eyebrow">
-            YOUR SMILE / INTERACTIVE CALENDAR
+    <div className="sp3 sp3-calendar">
+      {/* ARCHITECTURAL CALENDAR HERO */}
+
+      <section className="sp3-calendar-hero">
+        <div>
+          <span className="sp3-overline">
+            THE APPOINTMENT ATELIER / CHAPTER 03
           </span>
 
           <h1>
-            Find a moment
-            <br />
-            <em>for your smile.</em>
+            Find a moment <em>for you.</em>
           </h1>
 
           <p>
-            Explore a sample clinic schedule,
-            choose your preferred treatment and dentist,
-            then save a fictional appointment request.
+            A quieter way to explore scheduling.
+            Choose a fictional provider, treatment
+            interest and sample time—then save a
+            browser-only request.
           </p>
+
+          <a href="#sp3-booking-board">
+            CHOOSE YOUR MOMENT
+            <ArrowRight size={17} />
+          </a>
+        </div>
+
+        <div className="sp3-calendar-hero__art">
+          <div className="sp3-calendar-hero__orbit">
+            <CalendarDays
+              size={67}
+              strokeWidth={1}
+            />
+          </div>
+
+          <span>
+            TIME / CARE / CONVERSATION
+          </span>
         </div>
       </section>
 
-      <section className="ys2-section ys-container">
-        <div className="ys2-calendar-layout">
-          <div className="ys2-calendar-main">
-            <div className="ys2-calendar-form-row">
-              <label>
-                <span>01 / TREATMENT</span>
+      {/* JOURNEY INDICATOR */}
 
-                <select
-                  value={serviceId}
-                  onChange={(event) => {
-                    setServiceId(event.target.value);
-                    setSavedId("");
-                    setError("");
-                  }}
-                >
-                  {TREATMENTS.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+      <div className="sp3-calendar-progress sp3-container">
+        <span>
+          <b>01</b> CHOOSE YOUR INTEREST
+        </span>
 
-              <label>
-                <span>02 / SAMPLE DENTIST</span>
+        <span>
+          <b>02</b> SELECT A DATE
+        </span>
 
-                <select
-                  value={doctorId}
-                  onChange={(event) =>
-                    changeDoctor(event.target.value)
-                  }
-                >
-                  {DENTISTS.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+        <span>
+          <b>03</b> CHOOSE A TIME
+        </span>
 
-            <div className="ys2-calendar-panel">
-              <div className="ys2-calendar-header">
-                <div>
-                  <span className="ys-eyebrow">
-                    03 / SELECT A DATE
-                  </span>
+        <span>
+          <b>04</b> SAVE A DEMO REQUEST
+        </span>
+      </div>
 
-                  <h2>{monthTitle}</h2>
-                </div>
+      <section
+        className="sp3-container sp3-calendar-grid"
+        id="sp3-booking-board"
+      >
+        <div className="sp3-calendar-work">
+          {/* SERVICE AND DENTIST */}
 
-                <div className="ys2-calendar-arrows">
-                  <button
-                    type="button"
-                    aria-label="Previous month"
-                    disabled={
-                      currentMonthNumber <= minimumMonth
-                    }
-                    onClick={() => shiftMonth(-1)}
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
+          <div className="sp3-calendar-heading">
+            <span className="sp3-overline">
+              01 / THE PEOPLE & CARE
+            </span>
 
-                  <button
-                    type="button"
-                    aria-label="Next month"
-                    disabled={
-                      currentMonthNumber >= maximumMonth
-                    }
-                    onClick={() => shiftMonth(1)}
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-                </div>
-              </div>
+            <h2>
+              First, the <em>details.</em>
+            </h2>
 
-              <div className="ys2-calendar-weekdays">
-                {[
-                  "Sun",
-                  "Mon",
-                  "Tue",
-                  "Wed",
-                  "Thu",
-                  "Fri",
-                  "Sat",
-                ].map((day) => (
-                  <span key={day}>{day}</span>
-                ))}
-              </div>
-
-              <div className="ys2-calendar-days">
-                {cells.map((cell) => {
-                  const valid =
-                    cell.currentMonth &&
-                    cell.key >= minimumDate &&
-                    cell.key <= maximumDate &&
-                    cell.weekday !== 0;
-
-                  const selected =
-                    cell.key === selectedDate;
-
-                  const fullyBooked =
-                    (takenDates.get(cell.key)?.size || 0) >=
-                    TIME_SLOTS.length;
-
-                  return (
-                    <button
-                      type="button"
-                      key={cell.key}
-                      disabled={!valid || fullyBooked}
-                      className={[
-                        "ys2-calendar-day",
-                        selected ? "is-selected" : "",
-                        !cell.currentMonth ? "is-other" : "",
-                        fullyBooked && valid
-                          ? "is-full"
-                          : "",
-                      ].join(" ")}
-                      aria-label={`${formatDate(
-                        cell.key
-                      )}${fullyBooked ? ", fully booked" : ""}`}
-                      aria-pressed={selected}
-                      onClick={() => changeDate(cell.key)}
-                    >
-                      <span>{cell.day}</span>
-
-                      {valid && !fullyBooked && (
-                        <i aria-hidden="true" />
-                      )}
-
-                      {valid && fullyBooked && (
-                        <small>Full</small>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="ys2-calendar-legend">
-                <span>
-                  <i className="ys2-legend-available" />
-                  Available demo date
-                </span>
-
-                <span>
-                  <i className="ys2-legend-selected" />
-                  Selected
-                </span>
-
-                <span>
-                  <i className="ys2-legend-full" />
-                  Fully booked
-                </span>
-              </div>
-            </div>
-
-            <div className="ys2-calendar-times">
-              <div className="ys2-calendar-times-title">
-                <div>
-                  <span className="ys-eyebrow">
-                    04 / CHOOSE A TIME
-                  </span>
-
-                  <h3>
-                    {formatDate(selectedDate)}
-                  </h3>
-                </div>
-
-                <span className="ys2-time-count">
-                  {TIME_SLOTS.length - occupied.length} of{" "}
-                  {TIME_SLOTS.length} available
-                </span>
-              </div>
-
-              <div className="ys2-time-grid">
-                {TIME_SLOTS.map((slot) => {
-                  const isTaken = occupied.includes(slot);
-                  const isSelected = selectedTime === slot;
-
-                  return (
-                    <button
-                      type="button"
-                      key={slot}
-                      disabled={isTaken}
-                      aria-pressed={isSelected}
-                      className={
-                        isSelected ? "is-selected" : ""
-                      }
-                      onClick={() => {
-                        setSelectedTime(slot);
-                        setError("");
-                        setSavedId("");
-                      }}
-                    >
-                      <Clock3 size={17} />
-
-                      <span>{formatTime(slot)}</span>
-
-                      {isTaken && <small>Taken</small>}
-
-                      {isSelected && (
-                        <CheckCircle2 size={17} />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <p>
+              Your choices are illustrative;
+              they are not linked to a real
+              dental practice.
+            </p>
           </div>
 
-          <aside className="ys2-calendar-side">
-            <div className="ys2-appointment-summary">
-              <span className="ys-eyebrow">
-                YOUR VISIT PREVIEW
-              </span>
+          <div className="sp3-calendar-choices">
+            <label>
+              TREATMENT INTEREST
 
-              <h3>
-                A little time
-                <br />
-                <em>for you.</em>
-              </h3>
-
-              <div className="ys2-summary-doctor">
-                <img
-                  src={doctor.image}
-                  alt={`Illustrative portrait of ${doctor.name}`}
-                />
-
-                <div>
-                  <small>SAMPLE PROVIDER</small>
-                  <strong>{doctor.name}</strong>
-                  <span>{doctor.role}</span>
-                </div>
-              </div>
-
-              <div className="ys2-summary-list">
-                <div>
-                  <span>
-                    <Sparkles size={16} />
-                    Treatment
-                  </span>
-
-                  <strong>{treatment.name}</strong>
-                </div>
-
-                <div>
-                  <span>
-                    <CalendarDays size={16} />
-                    Date
-                  </span>
-
-                  <strong>{formatDate(selectedDate)}</strong>
-                </div>
-
-                <div>
-                  <span>
-                    <Clock3 size={16} />
-                    Time
-                  </span>
-
-                  <strong>
-                    {selectedTime
-                      ? formatTime(selectedTime)
-                      : "Select a time"}
-                  </strong>
-                </div>
-
-                <div>
-                  <span>Illustrative fee from</span>
-                  <strong>
-                    {formatPeso(treatment.priceFrom)}
-                  </strong>
-                </div>
-              </div>
-
-              <form
-                className="ys2-calendar-submit"
-                onSubmit={submit}
+              <select
+                value={serviceId}
+                onChange={(event) => {
+                  setServiceId(event.target.value);
+                  setSaved("");
+                  setError("");
+                }}
               >
-                <label htmlFor="ys2-visitor-alias">
-                  SAMPLE NAME / ALIAS
-                </label>
-
-                <input
-                  id="ys2-visitor-alias"
-                  type="text"
-                  value={alias}
-                  onChange={(event) =>
-                    setAlias(event.target.value)
-                  }
-                  required
-                  minLength={2}
-                  maxLength={50}
-                  placeholder="e.g. Demo Visitor"
-                />
-
-                {error && (
-                  <div
-                    className="ys2-calendar-error"
-                    role="alert"
+                {TREATMENTS.map((item) => (
+                  <option
+                    key={item.id}
+                    value={item.id}
                   >
-                    {error}
-                  </div>
-                )}
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              FICTIONAL PROFESSIONAL
+
+              <select
+                value={doctorId}
+                onChange={(event) =>
+                  changeDoctor(event.target.value)
+                }
+              >
+                {DENTISTS.map((item) => (
+                  <option
+                    key={item.id}
+                    value={item.id}
+                  >
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {/* INTERACTIVE MONTH */}
+
+          <div className="sp3-month">
+            <div className="sp3-month__head">
+              <div>
+                <span className="sp3-overline">
+                  02 / SELECT A DATE
+                </span>
+
+                <h2>{monthLabel}</h2>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  aria-label="Previous month"
+                  disabled={
+                    currentNumber <= minNumber
+                  }
+                  onClick={() => shiftMonth(-1)}
+                >
+                  <ChevronLeft size={20} />
+                </button>
 
                 <button
-                  type="submit"
-                  className="ys-button"
-                  disabled={!selectedTime}
+                  type="button"
+                  aria-label="Next month"
+                  disabled={
+                    currentNumber >= maxNumber
+                  }
+                  onClick={() => shiftMonth(1)}
                 >
-                  Save Demo Request
-                  <ArrowUpRight size={17} />
+                  <ChevronRight size={20} />
                 </button>
-              </form>
-
-              <div className="ys2-calendar-safety">
-                <ShieldCheck size={18} />
-
-                <p>
-                  Portfolio prototype only. No real
-                  appointment is created. Use a fictional
-                  alias, not personal medical information.
-                </p>
               </div>
             </div>
-          </aside>
-        </div>
 
-        {savedId && (
-          <div
-            className="ys2-calendar-success"
-            role="status"
-            aria-live="polite"
-          >
-            <CalendarCheck2 size={34} />
+            <div className="sp3-month__weekdays">
+              {[
+                "SUN",
+                "MON",
+                "TUE",
+                "WED",
+                "THU",
+                "FRI",
+                "SAT",
+              ].map((day) => (
+                <span key={day}>{day}</span>
+              ))}
+            </div>
 
-            <div>
-              <span className="ys-eyebrow">
-                DEMO REQUEST SAVED
+            <div className="sp3-month__days">
+              {cells.map((cell) => {
+                const valid =
+                  cell.isMonth &&
+                  cell.key >= today &&
+                  cell.key <= last &&
+                  cell.day !== 0;
+
+                const full =
+                  (countByDay.get(cell.key)?.size ||
+                    0) >= TIME_SLOTS.length;
+
+                return (
+                  <button
+                    type="button"
+                    key={cell.key}
+                    disabled={!valid || full}
+                    aria-pressed={
+                      cell.key === chosenDate
+                    }
+                    aria-label={`${
+                      formatDate(cell.key)
+                    }${
+                      full
+                        ? ", all demo times occupied"
+                        : ""
+                    }`}
+                    className={[
+                      cell.isMonth
+                        ? ""
+                        : "is-outside",
+                      cell.key === chosenDate
+                        ? "is-picked"
+                        : "",
+                      full && valid
+                        ? "is-full"
+                        : "",
+                    ].join(" ")}
+                    onClick={() =>
+                      changeDate(cell.key)
+                    }
+                  >
+                    <strong>{cell.num}</strong>
+
+                    {valid && (
+                      <i aria-hidden="true" />
+                    )}
+
+                    {full && valid && (
+                      <small>FULL</small>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="sp3-month__legend">
+              <span>
+                <i />
+                SELECTABLE DEMO DAY
               </span>
 
-              <h3>
-                Your date is on the <em>demo calendar.</em>
-              </h3>
+              <span>
+                <i />
+                SELECTED
+              </span>
 
-              <p>
-                Reference: <strong>{savedId}</strong>
-              </p>
-
-              <Link to="/manage">
-                View My Demo Requests
-                <ArrowRight size={17} />
-              </Link>
+              <span>
+                <i />
+                SUNDAY / OUT OF WINDOW UNAVAILABLE
+              </span>
             </div>
           </div>
-        )}
+
+          {/* TIME SELECTION */}
+
+          <div className="sp3-time-atelier">
+            <div>
+              <span className="sp3-overline">
+                03 / SELECT A SAMPLE TIME
+              </span>
+
+              <h2>
+                {formatDate(chosenDate)}
+              </h2>
+
+              <p>
+                {TIME_SLOTS.length - timesUsed.size} /{" "}
+                {TIME_SLOTS.length} sample slots
+                remaining for this provider
+                on this date
+              </p>
+            </div>
+
+            <div className="sp3-time-list">
+              {TIME_SLOTS.map((time) => (
+                <button
+                  type="button"
+                  key={time}
+                  disabled={
+                    timesUsed.has(time) ||
+                    !chosenIsValid
+                  }
+                  aria-pressed={slot === time}
+                  className={
+                    slot === time
+                      ? "is-picked"
+                      : ""
+                  }
+                  onClick={() => {
+                    setSlot(time);
+                    setError("");
+                    setSaved("");
+                  }}
+                >
+                  <Clock3 size={17} />
+
+                  <span>
+                    {formatTime(time)}
+                  </span>
+
+                  {timesUsed.has(time) ? (
+                    <small>OCCUPIED</small>
+                  ) : slot === time ? (
+                    <Check size={17} />
+                  ) : (
+                    <ArrowUpRight size={17} />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* STICKY LIVE REQUEST FOLIO */}
+
+        <aside className="sp3-calendar-ticket">
+          <div className="sp3-calendar-ticket__art">
+            <img
+              src={doctor.image}
+              alt={`Illustrative portrait for fictional ${doctor.name}`}
+            />
+
+            <span>
+              THE DEMO APPOINTMENT FOLIO
+            </span>
+          </div>
+
+          <div className="sp3-calendar-ticket__body">
+            <span className="sp3-overline">
+              04 / YOUR REQUEST PREVIEW
+            </span>
+
+            <h2>
+              Make it <em>yours.</em>
+            </h2>
+
+            <div className="sp3-ticket-doctor">
+              <b>{doctor.name}</b>
+              <span>
+                {doctor.role} / FICTIONAL
+              </span>
+            </div>
+
+            <div className="sp3-ticket-lines">
+              <div>
+                <span>CARE INTEREST</span>
+                <strong>
+                  {treatment.name}
+                </strong>
+              </div>
+
+              <div>
+                <span>YOUR DATE</span>
+                <strong>
+                  {formatDate(chosenDate)}
+                </strong>
+              </div>
+
+              <div>
+                <span>YOUR TIME</span>
+
+                <strong>
+                  {slot
+                    ? formatTime(slot)
+                    : "Select a time"}
+                </strong>
+              </div>
+
+              <div>
+                <span>ILLUSTRATIVE FROM</span>
+
+                <strong>
+                  {formatPeso(
+                    treatment.priceFrom
+                  )}
+                </strong>
+              </div>
+            </div>
+
+            <form onSubmit={submit}>
+              <label htmlFor="sp3-alias">
+                FICTIONAL VISITOR ALIAS
+              </label>
+
+              <input
+                id="sp3-alias"
+                type="text"
+                required
+                minLength={2}
+                maxLength={50}
+                value={alias}
+                onChange={(event) =>
+                  setAlias(event.target.value)
+                }
+                placeholder="e.g. Demo Visitor"
+              />
+
+              <button
+                type="submit"
+                disabled={
+                  !slot ||
+                  !chosenIsValid
+                }
+              >
+                SAVE DEMO REQUEST
+                <ArrowUpRight size={18} />
+              </button>
+            </form>
+
+            {error && (
+              <p
+                className="sp3-ticket-error"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
+
+            {saved && (
+              <div
+                className="sp3-ticket-success"
+                role="status"
+              >
+                <CalendarCheck2 size={22} />
+
+                <strong>
+                  Demo request saved.
+                </strong>
+
+                <small>
+                  Reference: {saved}
+                </small>
+
+                <Link to="/manage">
+                  VIEW SAVED REQUEST
+                  <ArrowRight size={15} />
+                </Link>
+              </div>
+            )}
+
+            <p className="sp3-calendar-fine">
+              <ShieldCheck size={16} />
+
+              No live availability, actual
+              appointment, treatment recommendation,
+              payment or patient record. Use a
+              fictional alias only.
+            </p>
+          </div>
+        </aside>
+      </section>
+
+      {/* FINAL CHAPTER */}
+
+      <section className="sp3-calendar-bottom">
+        <div>
+          <span className="sp3-overline">
+            AN INVITATION TO EXPLORE
+          </span>
+
+          <h2>
+            Have more <em>questions?</em>
+          </h2>
+
+          <p>
+            Explore the dentist journals and care
+            library before choosing any sample slot.
+          </p>
+
+          <div>
+            <Link to="/dentists">
+              THE PEOPLE JOURNAL
+              <ArrowUpRight size={17} />
+            </Link>
+
+            <Link to="/treatments">
+              THE CARE LIBRARY
+              <ArrowRight size={17} />
+            </Link>
+          </div>
+        </div>
       </section>
     </div>
   );

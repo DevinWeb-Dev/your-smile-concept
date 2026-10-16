@@ -1,466 +1,117 @@
-import { useMemo } from "react";
-
+import { Link, useOutletContext } from "react-router-dom";
 import {
-  Link,
-  useOutletContext,
-} from "react-router-dom";
-
-import {
-  ArrowRight,
-  ArrowUpRight,
-  CalendarCheck2,
-  CalendarDays,
-  CalendarPlus2,
-  CheckCircle2,
-  Clock3,
-  ClipboardList,
-  HeartPulse,
-  Sparkles,
-  Users,
-  XCircle,
+  ArrowRight, ArrowUpRight, CalendarClock, CalendarDays,
+  CheckCircle2, ClipboardList, Clock3, HeartPulse,
+  ShieldCheck, Smile, Users, XCircle,
 } from "lucide-react";
+import { DENTISTS, IMAGES, TREATMENTS, formatDate, formatTime } from "../../data/clinicData.js";
+import { localDateKey, shiftDate } from "../../utils/clinicReports.js";
 
-import {
-  DENTISTS,
-  TREATMENTS,
-  formatDate,
-  formatTime,
-} from "../../data/clinicData.js";
+const treatment = (id) => TREATMENTS.find((t) => t.id === id)?.name || "Unknown study";
+const dentist = (id) => DENTISTS.find((d) => d.id === id)?.name || "Unknown profile";
 
-function dateKey(date) {
-  const y = date.getFullYear();
-
-  const m = String(
-    date.getMonth() + 1
-  ).padStart(2, "0");
-
-  const d = String(
-    date.getDate()
-  ).padStart(2, "0");
-
-  return `${y}-${m}-${d}`;
-}
-
-function getToday() {
-  return dateKey(new Date());
-}
-
-function buildChart(requests) {
-  const today = new Date();
-  today.setHours(12, 0, 0, 0);
-
-  return Array.from(
-    { length: 7 },
-    (_, index) => {
-      const date = new Date(today);
-
-      date.setDate(
-        date.getDate() + index
-      );
-
-      const day = dateKey(date);
-
-      return {
-        day,
-        label: date.toLocaleDateString(
-          "en-PH",
-          { weekday: "short" }
-        ),
-        count: requests.filter(
-          (item) =>
-            item.date === day &&
-            item.status === "requested"
-        ).length,
-      };
-    }
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  note,
-  accent,
-}) {
+function Metric({ no, icon: Icon, label, value, note }) {
   return (
-    <article className="ysm3-stat-card">
-      <div className="ysm3-stat-top">
-        <span className={`ysm3-stat-icon ${accent || ""}`}>
-          <Icon size={22} strokeWidth={1.6} />
-        </span>
-
-        <span className="ysm3-stat-decoration">
-          / YOUR SMILE
-        </span>
-      </div>
-
-      <strong>{value}</strong>
-      <h3>{label}</h3>
-      <p>{note}</p>
+    <article className="sm4-metric">
+      <div><span>{no} / {label}</span><Icon size={20} strokeWidth={1.5} /></div>
+      <strong>{value}</strong><small>{note}</small>
     </article>
   );
 }
 
 export default function DashboardPage() {
-  const { requests } = useOutletContext();
-
-  const today = getToday();
-
-  const active = requests.filter(
-    (item) => item.status === "requested"
-  );
-
-  const cancelled = requests.filter(
-    (item) => item.status === "cancelled"
-  );
-
-  const todayVisits = active.filter(
-    (item) => item.date === today
-  );
-
-  const upcoming = useMemo(() => {
-    return requests
-      .filter(
-        (item) =>
-          item.status === "requested" &&
-          item.date >= today
-      )
-      .sort((a, b) =>
-        `${a.date} ${a.time}`.localeCompare(
-          `${b.date} ${b.time}`
-        )
-      )
-      .slice(0, 6);
-  }, [requests, today]);
-
-  const chart = useMemo(
-    () => buildChart(requests),
-    [requests]
-  );
-
-  const highestCount = Math.max(
-    1,
-    ...chart.map((item) => item.count)
-  );
-
-  const dentistLoad = useMemo(() => {
-    return DENTISTS.map((doctor) => ({
-      ...doctor,
-      total: active.filter(
-        (item) =>
-          item.doctorId === doctor.id &&
-          item.date >= today
-      ).length,
-    }));
-  }, [active, today]);
-
-  const maximumLoad = Math.max(
-    1,
-    ...dentistLoad.map((item) => item.total)
-  );
-
-  const todayLabel = new Date().toLocaleDateString(
-    "en-PH",
-    {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    }
-  );
+  const { requests = [] } = useOutletContext();
+  const today = localDateKey();
+  const active = requests.filter((r) => r.status === "requested");
+  const upcoming = active.filter((r) => r.date >= today)
+    .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
+  const todayList = active.filter((r) => r.date === today);
+  const cancelled = requests.length - active.length;
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const key = shiftDate(i);
+    return {
+      key,
+      count: active.filter((r) => r.date === key).length,
+      day: new Date(`${key}T12:00:00`).toLocaleDateString("en-PH", { weekday: "short" }),
+    };
+  });
+  const max = Math.max(1, ...days.map((d) => d.count));
+  const demand = TREATMENTS.map((t) => ({
+    ...t,
+    count: active.filter((r) => r.serviceId === t.id).length,
+  })).sort((a, b) => b.count - a.count);
+  const maxDemand = Math.max(1, ...demand.map((t) => t.count));
+  const dayLabel = new Date().toLocaleDateString("en-PH", {
+    weekday: "long", month: "long", day: "numeric", year: "numeric",
+  });
 
   return (
-    <div className="ysm3-page">
-      <div className="ysm3-page-heading">
-        <div>
-          <span className="ysm3-eyebrow">
-            CLINIC OVERVIEW / BATCH 3
-          </span>
-
-          <h1>
-            A clearer view
-            <br />
-            of <em>every visit.</em>
-          </h1>
-
-          <p>
-            {todayLabel} — Your appointment
-            activity, all in one place.
-          </p>
+    <div className="sm4-page">
+      <section className="sm4-command-hero">
+        <div className="sm4-command-copy">
+          <span className="sm4-eyebrow">01 / THE CLINIC COMMAND CENTER</span>
+          <h1>Good care begins <em>behind the scenes.</em></h1>
+          <p>{dayLabel}. A considered overview of fictional requests, daily rhythms, and the people behind this concept practice.</p>
+          <div className="sm4-hero-cta">
+            <Link to="/staff/appointments">OPEN APPOINTMENT DESK <ArrowUpRight size={17}/></Link>
+            <Link to="/staff/schedules">VIEW THE SCHEDULE <ArrowRight size={17}/></Link>
+          </div>
         </div>
-
-        <Link
-          to="/calendar"
-          className="ysm3-primary-button"
-        >
-          <CalendarPlus2 size={18} />
-          New Demo Request
-          <ArrowUpRight size={16} />
-        </Link>
-      </div>
-
-      <div className="ysm3-stat-grid">
-        <StatCard
-          icon={ClipboardList}
-          label="Total Requests"
-          value={requests.length}
-          note="All saved browser-local requests"
-        />
-
-        <StatCard
-          icon={CalendarCheck2}
-          label="Active Requests"
-          value={active.length}
-          note="Not real confirmed appointments"
-          accent="sage"
-        />
-
-        <StatCard
-          icon={CalendarDays}
-          label="Scheduled Today"
-          value={todayVisits.length}
-          note="Sample time slots for today"
-          accent="blue"
-        />
-
-        <StatCard
-          icon={XCircle}
-          label="Cancelled"
-          value={cancelled.length}
-          note="Retained in demo history"
-          accent="clay"
-        />
-      </div>
-
-      <div className="ysm3-dashboard-grid">
-        <section className="ysm3-panel ysm3-chart-panel">
-          <div className="ysm3-panel-heading">
-            <div>
-              <span className="ysm3-eyebrow">
-                SEVEN-DAY LOOKAHEAD
-              </span>
-
-              <h2>
-                Appointment <em>activity.</em>
-              </h2>
-            </div>
-
-            <span className="ysm3-panel-tag">
-              NEXT 7 DAYS
-            </span>
-          </div>
-
-          <div
-            className="ysm3-chart"
-            role="img"
-            aria-label={`Next seven days of active demo requests: ${chart.map(
-              (item) =>
-                `${item.label} ${item.count}`
-            ).join(", ")}`}
-          >
-            {chart.map((item) => (
-              <div
-                className="ysm3-chart-col"
-                key={item.day}
-              >
-                <div className="ysm3-chart-value">
-                  {item.count}
-                </div>
-
-                <div className="ysm3-chart-track">
-                  <div
-                    className="ysm3-chart-bar"
-                    style={{
-                      height: `${
-                        item.count
-                          ? Math.max(
-                              12,
-                              (item.count / highestCount) * 100
-                            )
-                          : 0
-                      }%`,
-                    }}
-                  />
-                </div>
-
-                <span>{item.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <p className="ysm3-chart-caption">
-            Counts reflect currently active
-            browser-local appointment requests,
-            grouped by requested visit date.
-          </p>
-        </section>
-
-        <section className="ysm3-panel">
-          <div className="ysm3-panel-heading">
-            <div>
-              <span className="ysm3-eyebrow">
-                SAMPLE TEAM CAPACITY
-              </span>
-
-              <h2>
-                Dentist <em>workload.</em>
-              </h2>
-            </div>
-          </div>
-
-          <div className="ysm3-workload-list">
-            {dentistLoad.map((doctor) => (
-              <div
-                className="ysm3-workload-item"
-                key={doctor.id}
-              >
-                <div className="ysm3-workload-info">
-                  <img
-                    src={doctor.image}
-                    alt={`Illustrative portrait for ${doctor.name}`}
-                  />
-
-                  <div>
-                    <strong>{doctor.name}</strong>
-                    <small>{doctor.role}</small>
-                  </div>
-
-                  <span>{doctor.total}</span>
-                </div>
-
-                <div className="ysm3-workload-track">
-                  <span
-                    style={{
-                      width: `${
-                        (doctor.total / maximumLoad) * 100
-                      }%`,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <Link
-            className="ysm3-panel-link"
-            to="/staff/schedules"
-          >
-            Open Dentist Schedules
-            <ArrowRight size={18} />
-          </Link>
-        </section>
-      </div>
-
-      <section className="ysm3-panel ysm3-upcoming-panel">
-        <div className="ysm3-panel-heading">
-          <div>
-            <span className="ysm3-eyebrow">
-              NEXT APPOINTMENT REQUESTS
-            </span>
-
-            <h2>
-              What's <em>coming up.</em>
-            </h2>
-          </div>
-
-          <Link
-            className="ysm3-panel-link"
-            to="/staff/appointments"
-          >
-            View All Requests
-            <ArrowRight size={18} />
-          </Link>
+        <div className="sm4-command-image">
+          <img src={IMAGES.clinic} alt="Illustrative modern dental clinic architecture" />
+          <div className="sm4-command-arc" aria-hidden="true"><span/><span/></div>
+          <small>THE PRACTICE / AN ARCHITECTURAL STUDY</small>
         </div>
-
-        {upcoming.length === 0 ? (
-          <div className="ysm3-empty-state">
-            <CalendarCheck2 size={32} />
-
-            <h3>No upcoming demo visits.</h3>
-
-            <p>
-              Create a fictional appointment request
-              from the public calendar to populate
-              this dashboard.
-            </p>
-
-            <Link
-              to="/calendar"
-              className="ysm3-secondary-button"
-            >
-              Open Calendar
-              <ArrowUpRight size={17} />
-            </Link>
-          </div>
-        ) : (
-          <div className="ysm3-appointment-list">
-            {upcoming.map((item) => {
-              const service = TREATMENTS.find(
-                (t) => t.id === item.serviceId
-              );
-
-              const doctor = DENTISTS.find(
-                (d) => d.id === item.doctorId
-              );
-
-              return (
-                <div
-                  className="ysm3-appointment-row"
-                  key={item.id}
-                >
-                  <div className="ysm3-date-avatar">
-                    <CalendarDays size={20} />
-                  </div>
-
-                  <div className="ysm3-appointment-main">
-                    <strong>
-                      {service?.name ||
-                        "Dental consultation"}
-                    </strong>
-
-                    <small>
-                      {item.alias || "Demo visitor"} ·{" "}
-                      {doctor?.name || "Sample dentist"}
-                    </small>
-                  </div>
-
-                  <div className="ysm3-appointment-time">
-                    <strong>
-                      {formatDate(item.date)}
-                    </strong>
-
-                    <small>
-                      {formatTime(item.time)}
-                    </small>
-                  </div>
-
-                  <span className="ysm3-status-pill">
-                    Requested
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </section>
 
-      <div className="ysm3-dashboard-note">
-        <HeartPulse size={23} />
+      <div className="sm4-brief"><span>THE DAILY BRIEF / {today}</span><span>NO LIVE PATIENT SYSTEM · LOCAL DEMONSTRATION</span></div>
+      <section className="sm4-metrics" aria-label="Clinic demo statistics">
+        <Metric no="01" icon={ClipboardList} label="TOTAL REQUESTS" value={requests.length} note="All local records, including cancelled" />
+        <Metric no="02" icon={CheckCircle2} label="OPEN REQUESTS" value={active.length} note="Requested, not clinically confirmed" />
+        <Metric no="03" icon={CalendarDays} label="TODAY'S REQUESTS" value={todayList.length} note="Sample schedule for this date" />
+        <Metric no="04" icon={XCircle} label="CANCELLED" value={cancelled} note="Retained in the local history" />
+      </section>
 
-        <div>
-          <strong>
-            Designed for clarity, not clinical operation.
-          </strong>
-
-          <p>
-            These statistics represent fictional
-            appointment requests. No medical records,
-            clinical outcomes, staff authentication,
-            or real payments are involved.
-          </p>
-        </div>
+      <div className="sm4-panels-two">
+        <section className="sm4-panel">
+          <div className="sm4-panel-top"><div><span className="sm4-eyebrow">02 / THE NEXT SEVEN DAYS</span><h2>The weekly <em>pulse.</em></h2></div><CalendarClock size={24}/></div>
+          <div className="sm4-graph" role="img" aria-label={days.map((d)=>`${d.day}: ${d.count} demo requests`).join(", ")}>
+            {days.map((d) => (
+              <div key={d.key} className="sm4-graph-day"><b>{d.count}</b><div><i style={{ height: `${(d.count / max) * 100}%` }} /></div><small>{d.day}</small></div>
+            ))}
+          </div>
+          <p className="sm4-fine">Counts active fictional requests by requested visit date, not confirmed attendance.</p>
+        </section>
+        <section className="sm4-panel">
+          <div className="sm4-panel-top"><div><span className="sm4-eyebrow">03 / THE TREATMENT MIX</span><h2>Areas of <em>interest.</em></h2></div><HeartPulse size={24}/></div>
+          <div className="sm4-demand">
+            {demand.map((t, i) => (
+              <div key={t.id}><small>{String(i + 1).padStart(2, "0")}</small><span><b>{t.name}</b><i><em style={{ width: `${t.count / maxDemand * 100}%` }}/></i></span><strong>{t.count}</strong></div>
+            ))}
+          </div>
+          <Link className="sm4-inline" to="/staff/treatments">OPEN THE TREATMENT STUDIO <ArrowUpRight size={17}/></Link>
+        </section>
       </div>
+
+      <div className="sm4-panels-two">
+        <section className="sm4-panel">
+          <div className="sm4-panel-top"><div><span className="sm4-eyebrow">04 / THE NEXT ARRIVALS</span><h2>The appointment <em>journal.</em></h2></div><Clock3 size={22}/></div>
+          {upcoming.length ? <div className="sm4-arrivals">
+            {upcoming.slice(0, 5).map((r) => (
+              <div key={r.id}><time dateTime={r.date}>{formatDate(r.date)}<b>{formatTime(r.time)}</b></time><span><strong>{r.alias}</strong><small>{treatment(r.serviceId)} · {dentist(r.doctorId)}</small></span><ArrowUpRight size={17}/></div>
+            ))}
+          </div> : <div className="sm4-empty"><Smile size={26}/><p>No upcoming demo requests yet.</p><Link to="/calendar">CREATE SAMPLE REQUEST <ArrowRight size={16}/></Link></div>}
+          <Link className="sm4-inline" to="/staff/appointments">ALL REQUEST RECORDS <ArrowUpRight size={17}/></Link>
+        </section>
+        <section className="sm4-panel sm4-team-panel">
+          <div className="sm4-panel-top"><div><span className="sm4-eyebrow">05 / THE SAMPLE CLINICAL TEAM</span><h2>Three different <em>perspectives.</em></h2></div><Users size={22}/></div>
+          {DENTISTS.map((d, i) => (
+            <div key={d.id} className="sm4-team-row"><img src={d.image} alt=""/><span><small>0{i+1} / FICTIONAL PROFILE</small><strong>{d.name}</strong><small>{d.role}</small></span><b>{upcoming.filter((r) => r.doctorId === d.id).length} UPCOMING</b></div>
+          ))}
+          <Link className="sm4-inline" to="/staff/schedules">OPEN DENTIST SCHEDULES <ArrowUpRight size={17}/></Link>
+        </section>
+      </div>
+      <p className="sm4-disclosure"><ShieldCheck size={17}/> Fictional sample records only. There is no live booking verification, patient database, or payment processing.</p>
     </div>
   );
 }

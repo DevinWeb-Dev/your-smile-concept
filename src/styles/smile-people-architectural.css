@@ -1,0 +1,2135 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
+
+/* YOUR SMILE. / ARCHITECTURAL REBUILD 03
+   The People Journal & Appointment Atelier */
+
+.sp3 {
+  --p-ink: #203452;
+  --p-deep: #182b47;
+  --p-white: #fffdfa;
+  --p-paper: #f6f5f0;
+  --p-lav: #e3e5f3;
+  --p-blue: #dbe9ec;
+  --p-peach: #f3e4d9;
+  --p-coral: #d5806b;
+  --p-yellow: #ebe4b5;
+  --p-line: #d4dce0;
+  --p-muted: #617387;
+  --p-serif: 'Instrument Serif', Georgia, serif;
+  --p-mono: 'DM Mono', monospace;
+  --p-sans: 'DM Sans', sans-serif;
+  --p-ease: cubic-bezier(.22, 1, .36, 1);
+
+  font-family: var(--p-sans);
+  background: var(--p-paper);
+  color: var(--p-ink);
+  min-width: 0;
+  overflow: clip;
+}
+
+.sp3 *,
+.sp3 *::before,
+.sp3 *::after {
+  box-sizing: border-box;
+}
+
+.sp3 :is(h1, h2, h3, p) {
+  margin: 0;
+}
+
+.sp3 img {
+  display: block;
+  max-width: 100%;
+}
+
+.sp3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sp3 button,
+.sp3 input,
+.sp3 select {
+  font-family: var(--p-sans);
+}
+
+.sp3 button {
+  cursor: pointer;
+}
+
+.sp3 button:disabled {
+  cursor: not-allowed;
+  opacity: .32;
+}
+
+.sp3 :is(a, button, input, select):focus-visible {
+  outline: 3px solid var(--p-coral);
+  outline-offset: 3px;
+}
+
+.sp3 :is(h1, h2, h3) {
+  font-family: var(--p-serif);
+  font-weight: 400;
+  letter-spacing: -.045em;
+}
+
+.sp3 :is(h1, h2, h3) em {
+  color: var(--p-coral);
+  font-weight: 400;
+}
+
+.sp3-container {
+  width: min(1400px, calc(100% - 8vw));
+  margin-inline: auto;
+}
+
+.sp3-overline {
+  font: 500 10px/1.65 var(--p-mono);
+  letter-spacing: .025em;
+}
+
+.sp3-underline {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 100%;
+  width: max-content;
+  padding: 12px 0;
+  border-bottom: 1px solid;
+  font: 500 10px var(--p-mono);
+  transition: gap .35s;
+}
+
+.sp3-underline:hover {
+  gap: 24px;
+}
+
+/* =====================================================
+   STAFF DEMO BUTTON — ALWAYS ACCESSIBLE
+===================================================== */
+
+.ys-app .ys3-staff-access {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 13px;
+  min-height: 43px;
+  border: 1px solid #203452;
+  color: #203452;
+  font: 600 10px 'DM Mono', monospace;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background .25s, color .25s;
+}
+
+.ys-app .ys3-staff-access:hover {
+  background: #e4e6f4;
+}
+
+.ys-app .ys3-staff-mobile {
+  display: none;
+}
+
+.ys-app .ys-header-actions {
+  gap: 9px;
+}
+
+/* =====================================================
+   DENTIST COLLECTION — HERO
+===================================================== */
+
+.sp3-people-hero {
+  display: grid;
+  grid-template-columns: 57% 43%;
+  min-height: 690px;
+  background: var(--p-lav);
+}
+
+.sp3-people-hero__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 30px;
+  padding: 62px 6vw 36px;
+}
+
+.sp3-people-hero__copy > .sp3-overline {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  width: 100%;
+}
+
+.sp3-people-hero h1 {
+  font-size: clamp(79px, 9vw, 162px);
+  line-height: .93;
+  max-width: 950px;
+  margin-right: -8vw;
+  position: relative;
+  z-index: 2;
+}
+
+.sp3-people-hero p {
+  max-width: 480px;
+  color: var(--p-muted);
+  font: 500 14px/1.95 var(--p-sans);
+}
+
+.sp3-people-hero__foot {
+  font: 400 9px var(--p-mono);
+  margin-top: auto;
+  border-top: 1px solid #a9b4c7;
+  padding-top: 18px;
+  width: 100%;
+}
+
+.sp3-people-hero__art {
+  position: relative;
+  overflow: hidden;
+  min-height: 570px;
+  background: #a8bfce;
+}
+
+.sp3-people-hero__art img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  animation: sp3-picture 1.1s both;
+}
+
+.sp3-people-hero__art::after {
+  content: '';
+  position: absolute;
+  inset: 50% 0 0;
+  background: linear-gradient(transparent, #24395594);
+  pointer-events: none;
+}
+
+.sp3-lines {
+  position: absolute;
+  z-index: 2;
+  width: min(90%, 470px);
+  top: 4%;
+  right: -15%;
+  color: #fff7df;
+  animation: sp3-orbit 23s ease-in-out infinite alternate;
+}
+
+.sp3-people-hero__art > span {
+  position: absolute;
+  z-index: 2;
+  bottom: 19px;
+  left: 20px;
+  color: white;
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-draw {
+  stroke-dasharray: 330;
+  stroke-dashoffset: 330;
+  animation: sp3-draw 2.5s .45s ease forwards;
+}
+
+@keyframes sp3-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes sp3-orbit {
+  to {
+    transform: rotate(14deg) translateY(13px);
+  }
+}
+
+@keyframes sp3-picture {
+  from {
+    opacity: .5;
+    transform: scale(1.07);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* =====================================================
+   THE PEOPLE INDEX
+===================================================== */
+
+.sp3-people-intro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 120px 0 45px;
+}
+
+.sp3-people-intro h2 {
+  font-size: clamp(62px, 7vw, 119px);
+  line-height: 1.02;
+  margin-top: 20px;
+  max-width: 860px;
+}
+
+.sp3-people-intro > p {
+  max-width: 365px;
+  color: var(--p-muted);
+  font: 500 12px/1.9 var(--p-sans);
+}
+
+.sp3-people-filters {
+  padding-bottom: 110px;
+}
+
+.sp3-people-filterbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 15px;
+  padding: 16px 0;
+  border-top: 1px solid var(--p-ink);
+  border-bottom: 1px solid var(--p-line);
+}
+
+.sp3-people-filterbar > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sp3-people-filterbar button {
+  border: 1px solid var(--p-line);
+  background: transparent;
+  color: var(--p-ink);
+  padding: 12px;
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-people-filterbar button.is-on {
+  background: var(--p-ink);
+  color: white;
+}
+
+.sp3-person-search {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--p-line);
+  background: var(--p-white);
+}
+
+.sp3-person-search input {
+  min-width: 0;
+  width: 230px;
+  max-width: 100%;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font: 500 12px var(--p-sans);
+}
+
+.sp3-result-counter {
+  padding: 18px 0 30px;
+  color: var(--p-muted);
+  font: 500 9px var(--p-mono);
+}
+
+/* =====================================================
+   ARCHITECTURAL PORTRAIT GRID
+===================================================== */
+
+.sp3-people-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 27px;
+  align-items: start;
+}
+
+.sp3-person {
+  --person-color: var(--p-lav);
+  grid-column: span 4;
+  min-width: 0;
+}
+
+.sp3-tone-blue {
+  --person-color: var(--p-blue);
+}
+
+.sp3-tone-peach {
+  --person-color: var(--p-peach);
+}
+
+.sp3-person:nth-child(2) {
+  margin-top: 75px;
+}
+
+.sp3-person:nth-child(3) {
+  margin-top: 135px;
+}
+
+.sp3-person__photo {
+  position: relative;
+  aspect-ratio: .77;
+  overflow: hidden;
+  background: var(--person-color);
+}
+
+.sp3-person__photo > a {
+  display: block;
+  height: 100%;
+}
+
+.sp3-person__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1s var(--p-ease);
+}
+
+.sp3-person__photo:hover img {
+  transform: scale(1.06);
+}
+
+.sp3-person__photo > span {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  padding: 10px;
+  background: var(--p-white);
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-person__ring {
+  position: absolute;
+  bottom: -95px;
+  right: -80px;
+  width: 220px;
+  aspect-ratio: 1;
+  border: 1px solid #fff8;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 23px #ffffff20,
+    0 0 0 53px #ffffff0e;
+  pointer-events: none;
+}
+
+.sp3-person__content {
+  padding: 25px 1px 0;
+}
+
+.sp3-person__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 9px;
+  color: var(--p-coral);
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-person h3 {
+  font-size: clamp(45px, 4.4vw, 74px);
+  line-height: .98;
+  margin: 16px 0;
+}
+
+.sp3-person__role {
+  color: var(--p-ink) !important;
+  font: 600 12px/1.7 var(--p-sans) !important;
+}
+
+.sp3-person__content > p {
+  margin: 12px 0;
+  color: var(--p-muted);
+  font: 500 12px/1.86 var(--p-sans);
+}
+
+.sp3-person__topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 17px 0;
+}
+
+.sp3-person__topics span {
+  background: var(--person-color);
+  padding: 10px;
+  font: 500 9px var(--p-sans);
+}
+
+.sp3-person__links {
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding-top: 18px;
+  border-top: 1px solid var(--p-line);
+}
+
+.sp3-person__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font: 500 9px var(--p-mono);
+  padding: 10px 0;
+}
+
+.sp3-person__links a:hover {
+  color: var(--p-coral);
+}
+
+.sp3-empty {
+  display: grid;
+  justify-items: start;
+  gap: 17px;
+  padding: 50px;
+  border: 1px solid var(--p-line);
+}
+
+.sp3-empty h3 {
+  font-size: 40px;
+}
+
+.sp3-empty button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  padding: 14px;
+  background: var(--p-ink);
+  color: white;
+  font: 500 9px var(--p-mono);
+}
+
+/* =====================================================
+   PERSON-CENTERED CARE SECTION
+===================================================== */
+
+.sp3-person-philosophy {
+  display: grid;
+  grid-template-columns: 1.08fr .92fr;
+  background: var(--p-deep);
+  color: white;
+  min-height: 545px;
+}
+
+.sp3-person-philosophy > div:first-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 25px;
+  padding: 75px 7vw;
+}
+
+.sp3-person-philosophy h2 {
+  font-size: clamp(61px, 6.5vw, 107px);
+  line-height: 1.02;
+}
+
+.sp3-person-philosophy h2 em {
+  color: var(--p-yellow);
+}
+
+.sp3-person-philosophy p {
+  max-width: 450px;
+  font: 500 12px/1.9 var(--p-sans);
+  color: #d0d9e6;
+}
+
+.sp3-person-philosophy a {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px;
+  background: var(--p-yellow);
+  color: var(--p-ink);
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-person-philosophy__lines {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  gap: 11px;
+  padding: 25px 28px 45px;
+  background: radial-gradient(
+    circle,
+    #657f9a,
+    #273c58 65%
+  );
+  overflow: hidden;
+}
+
+.sp3-person-philosophy__lines .sp3-lines {
+  position: absolute;
+  left: 12%;
+  top: -18%;
+  width: 85%;
+  opacity: .6;
+}
+
+.sp3-person-philosophy__lines > div {
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  align-self: stretch;
+  padding: 15px 18px;
+  background: #ecf0e8ed;
+  color: var(--p-ink);
+  font: 500 10px var(--p-mono);
+}
+
+.sp3-people-bottom {
+  display: grid;
+  grid-template-columns: 1fr .7fr;
+  align-items: stretch;
+  margin-block: 115px;
+  background: var(--p-yellow);
+}
+
+.sp3-people-bottom > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 21px;
+  padding: 65px 6vw;
+}
+
+.sp3-people-bottom h2 {
+  font-size: clamp(69px, 8vw, 120px);
+}
+
+.sp3-people-bottom p {
+  max-width: 390px;
+  color: var(--p-muted);
+  font: 500 12px/1.8 var(--p-sans);
+}
+
+.sp3-people-bottom a {
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid;
+  padding: 12px 0;
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-people-bottom > img {
+  width: 100%;
+  height: 100%;
+  min-height: 390px;
+  object-fit: cover;
+}
+
+.sp3-site-disclosure {
+  display: flex;
+  gap: 10px;
+  align-items: start;
+  color: var(--p-muted);
+  font: 400 9px/1.85 var(--p-mono);
+  padding-bottom: 55px;
+}
+
+.sp3-site-disclosure svg {
+  flex-shrink: 0;
+}
+
+/* =====================================================
+   INDIVIDUAL DENTIST JOURNAL
+===================================================== */
+
+.sp3-crumb {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-block: 28px;
+  border-bottom: 1px solid var(--p-line);
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-crumb a {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sp3-profile-hero {
+  display: grid;
+  grid-template-columns: 44% 56%;
+  min-height: 610px;
+  background: var(--person-color, var(--p-lav));
+}
+
+.sp3-profile-hero__photo {
+  position: relative;
+  min-height: 600px;
+  overflow: hidden;
+  background: #aabccc;
+}
+
+.sp3-profile-hero__photo > img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: sp3-picture 1.1s both;
+}
+
+.sp3-profile-hero__photo::after {
+  content: '';
+  position: absolute;
+  inset: 55% 0 0;
+  background: linear-gradient(transparent, #25365396);
+}
+
+.sp3-profile-arc {
+  position: absolute;
+  z-index: 2;
+  width: min(70%, 370px);
+  right: -11%;
+  top: 8%;
+  color: #fffce5;
+  animation: sp3-orbit 16s ease-in-out infinite alternate;
+}
+
+.sp3-profile-hero__photo > span {
+  position: absolute;
+  z-index: 3;
+  bottom: 22px;
+  left: 24px;
+  color: white;
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-profile-hero__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 23px;
+  padding: 72px 6vw;
+  min-width: 0;
+}
+
+.sp3-profile-hero h1 {
+  font-size: clamp(70px, 8vw, 135px);
+  line-height: .9;
+}
+
+.sp3-profile-hero h1 i {
+  font-style: normal;
+  color: var(--p-coral);
+}
+
+.sp3-profile-hero__role {
+  font: 600 13px/1.8 var(--p-sans);
+}
+
+.sp3-profile-hero__role b {
+  color: var(--p-coral);
+}
+
+.sp3-profile-hero__copy > p {
+  max-width: 500px;
+  color: var(--p-muted);
+  font: 500 13px/1.9 var(--p-sans);
+}
+
+.sp3-profile-hero__links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sp3-profile-hero__links > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px;
+  border: 1px solid var(--p-ink);
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-profile-hero__links > a:last-child {
+  background: var(--p-ink);
+  color: white;
+}
+
+.sp3-profile-hero__alert {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  padding-top: 19px;
+  border-top: 1px solid #9eafbe;
+  color: #4c6075;
+  font: 400 9px/1.8 var(--p-mono);
+}
+
+.sp3-profile-hero__alert svg {
+  flex-shrink: 0;
+}
+
+.sp3-profile-ribbon {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-block: 21px;
+  border-bottom: 1px solid var(--p-line);
+  color: var(--p-muted);
+  font: 500 9px var(--p-mono);
+}
+
+/* EDITORIAL PROFILE BODY */
+
+.sp3-profile-columns {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.15fr)
+    minmax(300px, .62fr);
+  gap: clamp(30px, 5vw, 85px);
+  align-items: start;
+  padding-block: 100px;
+}
+
+.sp3-profile-columns .sp3-profile-content {
+  min-width: 0;
+}
+
+.sp3-profile-columns .sp3-profile-content > section {
+  padding: 54px 0;
+  border-top: 1px solid var(--p-line);
+}
+
+.sp3-profile-columns .sp3-profile-content > section:first-child {
+  border: 0;
+  padding-top: 0;
+}
+
+.sp3-profile-columns .sp3-profile-content h2 {
+  font-size: clamp(60px, 6vw, 99px);
+  line-height: 1.04;
+  margin: 20px 0 25px;
+}
+
+.sp3-profile-story__lead {
+  font: 400 clamp(23px, 2.3vw, 34px)/1.55 var(--p-serif);
+  max-width: 710px;
+}
+
+.sp3-profile-story blockquote {
+  margin: 55px 0 0;
+  padding: 29px 32px;
+  background: var(--person-color);
+  border-left: 3px solid var(--p-coral);
+  font: 400 clamp(29px, 3vw, 45px)/1.2 var(--p-serif);
+}
+
+/* PERSONAL CARE PATHWAY */
+
+.sp3-profile-path > div {
+  border-top: 1px solid var(--p-line);
+}
+
+.sp3-profile-path article {
+  display: grid;
+  grid-template-columns: 34px 1fr 22px;
+  align-items: center;
+  gap: 15px;
+  padding: 23px 0;
+  border-bottom: 1px solid var(--p-line);
+}
+
+.sp3-profile-path article > span {
+  color: var(--p-coral);
+  font: 500 10px var(--p-mono);
+}
+
+.sp3-profile-path h3 {
+  font-size: clamp(37px, 4vw, 61px);
+  line-height: 1.05;
+}
+
+.sp3-profile-path p {
+  margin-top: 9px;
+  color: var(--p-muted);
+  font: 500 12px/1.85 var(--p-sans);
+}
+
+.sp3-profile-interests > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sp3-profile-interests > div > div {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 87px;
+  padding: 14px;
+  background: var(--person-color);
+}
+
+.sp3-profile-interests span {
+  color: var(--p-coral);
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-profile-interests strong {
+  flex: 1;
+  font: 600 12px/1.5 var(--p-sans);
+}
+
+/* QUESTIONS NOTEBOOK */
+
+.sp3-profile-questions {
+  background: var(--p-lav);
+  padding: 43px !important;
+  border: 0 !important;
+}
+
+.sp3-profile-questions > div > p {
+  color: var(--p-muted);
+  font: 500 12px/1.85 var(--p-sans);
+}
+
+.sp3-profile-questions > p {
+  display: flex;
+  gap: 17px;
+  align-items: baseline;
+  padding: 18px 0;
+  border-bottom: 1px solid #c5cede;
+  font: 400 clamp(25px, 2.5vw, 37px)/1.3 var(--p-serif);
+}
+
+.sp3-profile-questions > p > span {
+  color: var(--p-coral);
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-profile-questions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 24px;
+  padding: 14px;
+  border: 1px solid var(--p-ink);
+  background: transparent;
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-copy-status {
+  display: block;
+  margin-top: 12px;
+  font: 500 10px var(--p-mono);
+}
+
+/* RELATED TREATMENT JOURNALS */
+
+.sp3-profile-related > div {
+  display: grid;
+}
+
+.sp3-profile-related a {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--p-line);
+}
+
+.sp3-profile-related a img {
+  width: 90px;
+  height: 75px;
+  object-fit: cover;
+}
+
+.sp3-profile-related a > span {
+  display: grid;
+  flex: 1;
+  gap: 7px;
+}
+
+.sp3-profile-related a small {
+  font: 500 9px var(--p-mono);
+  color: var(--p-coral);
+}
+
+.sp3-profile-related a strong {
+  font: 400 clamp(26px, 2.6vw, 38px) var(--p-serif);
+}
+
+/* STICKY PROFILE APPOINTMENT CARD */
+
+.sp3-profile-planner {
+  position: sticky;
+  top: 105px;
+  min-width: 0;
+  background: var(--p-white);
+  border: 1px solid var(--p-line);
+  box-shadow: 15px 16px 0 #aec1cf25;
+}
+
+.sp3-profile-planner__art {
+  height: 220px;
+  position: relative;
+  overflow: hidden;
+}
+
+.sp3-profile-planner__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sp3-profile-planner__art > span {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  padding: 10px;
+  background: var(--p-white);
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-profile-planner__content {
+  display: grid;
+  gap: 18px;
+  padding: clamp(20px, 2.7vw, 36px);
+}
+
+.sp3-profile-planner h2 {
+  font-size: clamp(47px, 4.4vw, 69px);
+  line-height: 1.05;
+}
+
+.sp3-profile-planner p {
+  color: var(--p-muted);
+  font: 500 12px/1.85 var(--p-sans);
+}
+
+.sp3-profile-planner label {
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-profile-planner select {
+  padding: 14px;
+  background: var(--p-paper);
+  border: 1px solid var(--p-line);
+  min-width: 0;
+  width: 100%;
+  color: var(--p-ink);
+}
+
+.sp3-profile-planner__doctor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--person-color);
+  padding: 11px;
+}
+
+.sp3-profile-planner__doctor img {
+  height: 60px;
+  width: 58px;
+  object-fit: cover;
+}
+
+.sp3-profile-planner__doctor > span {
+  display: grid;
+  gap: 6px;
+}
+
+.sp3-profile-planner__doctor b {
+  font: 600 12px var(--p-sans);
+}
+
+.sp3-profile-planner__doctor small {
+  font: 400 9px var(--p-mono);
+}
+
+.sp3-profile-planner__content > a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 9px;
+  padding: 17px;
+  background: var(--p-ink);
+  color: white;
+  font: 500 10px var(--p-mono);
+}
+
+.sp3-profile-planner__fine {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  font: 400 9px/1.75 var(--p-mono) !important;
+}
+
+.sp3-profile-planner__fine svg {
+  flex-shrink: 0;
+}
+
+/* NEXT PERSON */
+
+.sp3-profile-next {
+  display: grid;
+  grid-template-columns: 1fr .65fr;
+  min-height: 470px;
+  background: var(--p-yellow);
+}
+
+.sp3-profile-next > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 22px;
+  padding: 65px 8vw;
+}
+
+.sp3-profile-next h2 {
+  font-size: clamp(68px, 8vw, 118px);
+}
+
+.sp3-profile-next a {
+  display: inline-flex;
+  gap: 15px;
+  align-items: center;
+  border-bottom: 1px solid;
+  padding: 13px 0;
+  font: 500 10px var(--p-mono);
+}
+
+.sp3-profile-next small {
+  font: 400 9px var(--p-mono);
+}
+
+.sp3-profile-next img {
+  height: 100%;
+  min-height: 400px;
+  width: 100%;
+  object-fit: cover;
+}
+
+.sp3-profile-missing {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 22px;
+  min-height: 70vh;
+  padding: 9vw;
+}
+
+.sp3-profile-missing h1 {
+  font-size: clamp(70px, 9vw, 130px);
+}
+
+.sp3-profile-missing a {
+  display: inline-flex;
+  gap: 14px;
+  padding: 15px;
+  background: var(--p-ink);
+  color: white;
+  font: 500 9px var(--p-mono);
+}
+
+/* =====================================================
+   APPOINTMENT ATELIER — HERO & PROGRESS
+===================================================== */
+
+.sp3-calendar-hero {
+  display: grid;
+  grid-template-columns: 1.22fr .78fr;
+  min-height: 490px;
+  background: var(--p-blue);
+}
+
+.sp3-calendar-hero > div:first-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 25px;
+  padding: 65px 7vw;
+}
+
+.sp3-calendar-hero h1 {
+  font-size: clamp(72px, 9vw, 145px);
+  line-height: .95;
+}
+
+.sp3-calendar-hero p {
+  max-width: 520px;
+  color: var(--p-muted);
+  font: 500 13px/1.9 var(--p-sans);
+}
+
+.sp3-calendar-hero a {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid;
+  padding: 12px 0;
+  font: 500 10px var(--p-mono);
+}
+
+.sp3-calendar-hero__art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: radial-gradient(
+    circle at 48% 46%,
+    #9eb9cc,
+    #637fa0 55%,
+    #263f63
+  );
+}
+
+.sp3-calendar-hero__orbit {
+  display: grid;
+  place-items: center;
+  width: min(67%, 350px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid #ffffffa8;
+  box-shadow:
+    0 0 0 24px #ffffff13,
+    0 0 0 48px #ffffff12,
+    0 0 0 79px #ffffff0b;
+  color: #fffbe7;
+  animation: sp3-orbit 16s ease-in-out infinite alternate;
+}
+
+.sp3-calendar-hero__art > span {
+  position: absolute;
+  bottom: 25px;
+  left: 25px;
+  color: white;
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-calendar-progress {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-bottom: 1px solid var(--p-line);
+  padding-block: 22px;
+  gap: 12px;
+}
+
+.sp3-calendar-progress > span {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font: 500 9px/1.5 var(--p-mono);
+}
+
+.sp3-calendar-progress b {
+  font: 400 30px/1 var(--p-serif);
+  color: var(--p-coral);
+}
+
+/* =====================================================
+   APPOINTMENT STUDIO — MAIN LAYOUT
+===================================================== */
+
+.sp3-calendar-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.2fr)
+    minmax(310px, .62fr);
+  align-items: start;
+  gap: clamp(25px, 4vw, 65px);
+  padding-block: 95px;
+}
+
+.sp3-calendar-work {
+  min-width: 0;
+}
+
+.sp3-calendar-heading h2 {
+  margin: 18px 0;
+  font-size: clamp(56px, 6vw, 95px);
+}
+
+.sp3-calendar-heading p {
+  font: 500 12px/1.85 var(--p-sans);
+  color: var(--p-muted);
+}
+
+.sp3-calendar-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 30px 0 48px;
+}
+
+.sp3-calendar-choices label {
+  display: grid;
+  gap: 11px;
+  min-width: 0;
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-calendar-choices select {
+  min-width: 0;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--p-line);
+  background: var(--p-white);
+  font: 600 12px var(--p-sans);
+  color: var(--p-ink);
+}
+
+/* CUSTOM MONTH CALENDAR */
+
+.sp3-month {
+  background: var(--p-white);
+  border: 1px solid var(--p-line);
+  padding: clamp(15px, 3vw, 39px);
+}
+
+.sp3-month__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding-bottom: 27px;
+}
+
+.sp3-month__head h2 {
+  margin-top: 8px;
+  font-size: clamp(42px, 4vw, 65px);
+}
+
+.sp3-month__head > div:last-child {
+  display: flex;
+  gap: 8px;
+}
+
+.sp3-month__head button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid var(--p-line);
+}
+
+.sp3-month__weekdays,
+.sp3-month__days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.sp3-month__weekdays span {
+  text-align: center;
+  font: 500 9px var(--p-mono);
+  padding: 11px 0;
+  color: var(--p-muted);
+}
+
+.sp3-month__days {
+  border-top: 1px solid var(--p-line);
+  border-left: 1px solid var(--p-line);
+}
+
+.sp3-month__days button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 68px;
+  border: 0;
+  border-right: 1px solid var(--p-line);
+  border-bottom: 1px solid var(--p-line);
+  background: var(--p-white);
+  color: var(--p-ink);
+  transition: background .25s;
+}
+
+.sp3-month__days button > strong {
+  font: 500 13px var(--p-sans);
+}
+
+.sp3-month__days button > i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--p-coral);
+}
+
+.sp3-month__days button.is-outside {
+  opacity: .23;
+}
+
+.sp3-month__days button.is-picked {
+  background: var(--p-ink);
+  color: white;
+  opacity: 1;
+}
+
+.sp3-month__days button.is-picked > i {
+  background: var(--p-yellow);
+}
+
+.sp3-month__days button.is-full {
+  background: #f0dfd7;
+}
+
+.sp3-month__days button > small {
+  font: 400 7px var(--p-mono);
+}
+
+.sp3-month__days button:disabled:not(.is-full) {
+  color: #b5bfcb;
+  background: #f4f4f1;
+}
+
+.sp3-month__days button:disabled {
+  cursor: not-allowed;
+}
+
+.sp3-month__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 13px;
+  padding-top: 18px;
+  font: 400 8px/1.6 var(--p-mono);
+}
+
+.sp3-month__legend span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sp3-month__legend span i {
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--p-line);
+}
+
+.sp3-month__legend span:first-child i {
+  background: var(--p-coral);
+}
+
+.sp3-month__legend span:nth-child(2) i {
+  background: var(--p-ink);
+}
+
+/* TIME SELECTION */
+
+.sp3-time-atelier {
+  padding: 47px 0;
+}
+
+.sp3-time-atelier > div:first-child h2 {
+  font-size: clamp(39px, 4vw, 64px);
+  margin: 14px 0;
+}
+
+.sp3-time-atelier > div:first-child p {
+  color: var(--p-muted);
+  font: 500 11px var(--p-sans);
+}
+
+.sp3-time-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.sp3-time-list button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 7px;
+  min-height: 65px;
+  padding: 13px;
+  background: var(--p-white);
+  color: var(--p-ink);
+  border: 1px solid var(--p-line);
+}
+
+.sp3-time-list button span {
+  font: 600 11px var(--p-sans);
+}
+
+.sp3-time-list button small {
+  font: 400 8px var(--p-mono);
+}
+
+.sp3-time-list button.is-picked {
+  background: var(--p-ink);
+  border-color: var(--p-ink);
+  color: #fff;
+}
+
+.sp3-time-list button:disabled {
+  background: #ecebe8;
+}
+
+/* =====================================================
+   LIVE APPOINTMENT TICKET
+===================================================== */
+
+.sp3-calendar-ticket {
+  position: sticky;
+  top: 100px;
+  background: var(--p-white);
+  border: 1px solid var(--p-line);
+  box-shadow: 16px 18px 0 #bacbd52a;
+}
+
+.sp3-calendar-ticket__art {
+  height: 260px;
+  position: relative;
+  overflow: hidden;
+  background: var(--p-lav);
+}
+
+.sp3-calendar-ticket__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+}
+
+.sp3-calendar-ticket__art > span {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  background: var(--p-white);
+  padding: 10px;
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-calendar-ticket__body {
+  display: grid;
+  gap: 20px;
+  padding: clamp(19px, 2.6vw, 37px);
+}
+
+.sp3-calendar-ticket h2 {
+  font-size: clamp(46px, 4vw, 67px);
+  line-height: 1.06;
+}
+
+.sp3-ticket-doctor {
+  display: grid;
+  gap: 6px;
+  padding: 17px 0;
+  border-block: 1px solid var(--p-line);
+}
+
+.sp3-ticket-doctor > b {
+  font: 400 29px var(--p-serif);
+}
+
+.sp3-ticket-doctor > span {
+  font: 400 9px var(--p-mono);
+  color: var(--p-muted);
+}
+
+.sp3-ticket-lines {
+  display: grid;
+}
+
+.sp3-ticket-lines > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--p-line);
+}
+
+.sp3-ticket-lines span {
+  font: 400 9px var(--p-mono);
+  color: var(--p-muted);
+}
+
+.sp3-ticket-lines strong {
+  text-align: right;
+  font: 600 12px var(--p-sans);
+}
+
+.sp3-calendar-ticket form {
+  display: grid;
+  gap: 12px;
+}
+
+.sp3-calendar-ticket label {
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-calendar-ticket input {
+  width: 100%;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid var(--p-line);
+  background: var(--p-paper);
+  font: 500 12px var(--p-sans);
+}
+
+.sp3-calendar-ticket form button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 16px;
+  background: var(--p-ink);
+  color: white;
+  border: 0;
+  font: 500 10px var(--p-mono);
+}
+
+.sp3-ticket-error {
+  padding: 14px;
+  background: #f8e1d9;
+  color: #8f5149;
+  font: 500 11px/1.7 var(--p-sans);
+}
+
+.sp3-ticket-success {
+  display: grid;
+  gap: 9px;
+  padding: 19px;
+  background: #e0e9d9;
+}
+
+.sp3-ticket-success strong {
+  font: 600 12px var(--p-sans);
+}
+
+.sp3-ticket-success small {
+  font: 400 9px var(--p-mono);
+  overflow-wrap: anywhere;
+}
+
+.sp3-ticket-success a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid;
+  padding: 9px 0;
+  width: max-content;
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-calendar-fine {
+  display: flex;
+  align-items: start;
+  gap: 11px;
+  color: var(--p-muted);
+  font: 400 9px/1.75 var(--p-mono);
+}
+
+.sp3-calendar-fine svg {
+  flex-shrink: 0;
+}
+
+/* FINAL CALENDAR CHAPTER */
+
+.sp3-calendar-bottom {
+  display: flex;
+  justify-content: center;
+  padding: 100px 5vw;
+  background: var(--p-yellow);
+}
+
+.sp3-calendar-bottom > div {
+  width: min(1000px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.sp3-calendar-bottom h2 {
+  font-size: clamp(69px, 9vw, 138px);
+}
+
+.sp3-calendar-bottom p {
+  max-width: 450px;
+  color: var(--p-muted);
+  font: 500 12px/1.8 var(--p-sans);
+}
+
+.sp3-calendar-bottom > div > div {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 13px;
+}
+
+.sp3-calendar-bottom a {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid var(--p-ink);
+  font: 500 9px var(--p-mono);
+}
+
+.sp3-calendar-bottom a:first-child {
+  background: var(--p-ink);
+  color: white;
+}
+
+/* =====================================================
+   RESPONSIVE — LAPTOP
+===================================================== */
+
+@media (max-width: 1180px) {
+  .sp3-people-hero h1 {
+    font-size: clamp(73px, 8vw, 112px);
+  }
+
+  .sp3-people-grid {
+    gap: 18px;
+  }
+
+  .sp3-person:nth-child(n) {
+    grid-column: span 4;
+    margin-top: 0;
+  }
+
+  .sp3-person h3 {
+    font-size: clamp(38px, 4vw, 58px);
+  }
+
+  .sp3-person__links {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .sp3-profile-columns {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(270px, .7fr);
+    gap: 25px;
+  }
+
+  .sp3-calendar-grid {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(290px, .75fr);
+    gap: 22px;
+  }
+
+  .sp3-time-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* =====================================================
+   RESPONSIVE — TABLET
+===================================================== */
+
+@media (max-width: 960px) {
+  .sp3-people-hero,
+  .sp3-profile-hero,
+  .sp3-calendar-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .sp3-people-hero__copy {
+    min-height: 530px;
+  }
+
+  .sp3-people-hero__art {
+    min-height: 450px;
+  }
+
+  .sp3-people-hero h1 {
+    margin-right: 0;
+    font-size: clamp(80px, 11vw, 125px);
+  }
+
+  .sp3-people-intro {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .sp3-people-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sp3-person:nth-child(n) {
+    grid-column: span 1;
+  }
+
+  .sp3-person:nth-child(2) {
+    margin-top: 65px;
+  }
+
+  .sp3-person:nth-child(3) {
+    margin-top: 0;
+  }
+
+  .sp3-person-philosophy {
+    grid-template-columns: 1fr;
+  }
+
+  .sp3-person-philosophy__lines {
+    min-height: 350px;
+  }
+
+  .sp3-profile-hero__photo {
+    min-height: 430px;
+  }
+
+  .sp3-profile-hero__copy {
+    padding: 70px 6vw;
+  }
+
+  .sp3-profile-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .sp3-profile-planner {
+    position: static;
+    max-width: 720px;
+  }
+
+  .sp3-calendar-hero {
+    min-height: auto;
+  }
+
+  .sp3-calendar-hero__art {
+    min-height: 300px;
+  }
+
+  .sp3-calendar-progress {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sp3-calendar-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sp3-calendar-ticket {
+    position: static;
+    max-width: 720px;
+  }
+
+  /* Staff shortcut remains visible in mobile header */
+
+  .ys-app .ys3-staff-access {
+    padding: 10px;
+    min-width: 42px;
+  }
+
+  .ys-app .ys3-staff-access .ys3-staff-text {
+    display: none;
+  }
+
+  .ys-app .ys3-staff-mobile {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 16px 18px;
+    background: #e3e5f3;
+    color: #203452 !important;
+    border: 1px solid #cbd4e1;
+    font: 700 12px 'DM Sans', sans-serif;
+    text-decoration: none;
+  }
+}
+
+/* =====================================================
+   RESPONSIVE — MOBILE
+===================================================== */
+
+@media (max-width: 650px) {
+  .sp3-container {
+    width: calc(100% - 34px);
+  }
+
+  .sp3-people-hero__copy {
+    padding: 36px 19px;
+    min-height: 540px;
+  }
+
+  .sp3-people-hero h1 {
+    font-size: clamp(69px, 13vw, 99px);
+  }
+
+  .sp3-people-hero__art {
+    min-height: 340px;
+  }
+
+  .sp3-people-intro {
+    padding: 78px 0 35px;
+  }
+
+  .sp3-people-intro h2 {
+    font-size: clamp(60px, 11vw, 83px);
+  }
+
+  .sp3-people-filterbar > div {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .sp3-people-filterbar button {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .sp3-person-search {
+    width: 100%;
+  }
+
+  .sp3-person-search input {
+    width: 100%;
+  }
+
+  .sp3-people-grid {
+    grid-template-columns: 1fr;
+    gap: 42px;
+  }
+
+  .sp3-person:nth-child(n) {
+    grid-column: 1;
+    margin: 0;
+  }
+
+  .sp3-person__photo {
+    aspect-ratio: .88;
+  }
+
+  .sp3-person h3 {
+    font-size: clamp(52px, 11vw, 75px);
+  }
+
+  .sp3-person__links {
+    flex-direction: row;
+  }
+
+  .sp3-person-philosophy > div:first-child {
+    padding: 70px 24px;
+  }
+
+  .sp3-person-philosophy h2 {
+    font-size: clamp(60px, 11vw, 85px);
+  }
+
+  .sp3-people-bottom {
+    grid-template-columns: 1fr;
+    margin-block: 65px;
+  }
+
+  .sp3-people-bottom > div {
+    padding: 60px 23px;
+  }
+
+  .sp3-people-bottom h2 {
+    font-size: 75px;
+  }
+
+  .sp3-people-bottom > img {
+    min-height: 320px;
+  }
+
+  .sp3-profile-hero__photo {
+    min-height: 390px;
+  }
+
+  .sp3-profile-hero__copy {
+    padding: 55px 22px;
+  }
+
+  .sp3-profile-hero h1 {
+    font-size: clamp(66px, 12vw, 88px);
+  }
+
+  .sp3-profile-columns {
+    padding-block: 65px;
+  }
+
+  .sp3-profile-columns .sp3-profile-content h2 {
+    font-size: clamp(57px, 11vw, 81px);
+  }
+
+  .sp3-profile-interests > div {
+    grid-template-columns: 1fr;
+  }
+
+  .sp3-profile-questions {
+    padding: 22px !important;
+  }
+
+  .sp3-profile-next {
+    grid-template-columns: 1fr;
+  }
+
+  .sp3-profile-next > div {
+    padding: 65px 23px;
+  }
+
+  .sp3-profile-next h2 {
+    font-size: 79px;
+  }
+
+  .sp3-profile-next img {
+    min-height: 340px;
+    max-height: 430px;
+  }
+
+  .sp3-calendar-hero > div:first-child {
+    padding: 60px 23px;
+  }
+
+  .sp3-calendar-hero h1 {
+    font-size: clamp(72px, 12vw, 97px);
+  }
+
+  .sp3-calendar-hero__art {
+    min-height: 250px;
+  }
+
+  .sp3-calendar-progress {
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    padding-block: 22px;
+  }
+
+  .sp3-calendar-progress > span {
+    font-size: 8px;
+  }
+
+  .sp3-calendar-progress b {
+    font-size: 24px;
+  }
+
+  .sp3-calendar-grid {
+    padding-block: 65px;
+  }
+
+  .sp3-calendar-choices {
+    grid-template-columns: 1fr;
+    margin-bottom: 29px;
+  }
+
+  .sp3-calendar-heading h2 {
+    font-size: 62px;
+  }
+
+  .sp3-month__head h2 {
+    font-size: 41px;
+  }
+
+  .sp3-month__days button {
+    min-height: 51px;
+  }
+
+  .sp3-month__days button strong {
+    font-size: 12px;
+  }
+
+  .sp3-time-list {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sp3-time-list button {
+    min-height: 58px;
+    padding: 10px;
+  }
+
+  .sp3-calendar-bottom {
+    padding: 80px 20px;
+  }
+
+  .sp3-calendar-bottom h2 {
+    font-size: 73px;
+  }
+}
+
+/* SMALLER PHONES */
+
+@media (max-width: 375px) {
+  .sp3-people-hero h1 {
+    font-size: 67px;
+  }
+
+  .sp3-profile-hero h1 {
+    font-size: 59px;
+  }
+
+  .sp3-calendar-hero h1 {
+    font-size: 67px;
+  }
+
+  .sp3-time-list button > span {
+    font-size: 10px;
+  }
+
+  .sp3-time-list button svg:last-child {
+    display: none;
+  }
+
+  .sp3-profile-story blockquote {
+    padding: 19px;
+  }
+
+  .sp3-calendar-ticket__body {
+    padding: 20px;
+  }
+}
+
+/* REDUCED MOTION */
+
+@media (prefers-reduced-motion: reduce) {
+  .sp3 *,
+  .sp3 *::before,
+  .sp3 *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+/* Compact-phone header protection */
+@media (max-width: 420px) {
+  .ys-app .ys-header-inner {
+    gap: 8px;
+  }
+
+  .ys-app .ys-brand-word {
+    font-size: .89rem;
+    letter-spacing: 0;
+  }
+
+  .ys-app .ys-header-actions {
+    gap: 6px;
+  }
+
+  .ys-app .ys3-staff-access {
+    min-width: 36px;
+    padding: 7px;
+  }
+
+  .ys-app .ys-menu-button {
+    width: 38px;
+    height: 38px;
+  }
+}

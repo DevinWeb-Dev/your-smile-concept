@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   Link,
@@ -10,89 +10,104 @@ import {
 } from "react-router-dom";
 
 import {
+  ArrowLeft,
   ArrowRight,
   ArrowUpRight,
-  CalendarCheck2,
   CalendarDays,
   CheckCircle2,
   Clock3,
-  Heart,
+  LayoutDashboard,
   Menu,
-  Search,
   ShieldCheck,
   Smile,
-  Sparkles,
-  Stethoscope,
-  Users,
   X,
 } from "lucide-react";
 
 import {
   BRAND,
-  IMAGES,
-  CATEGORIES,
-  TREATMENTS,
   DENTISTS,
+  IMAGES,
   TIME_SLOTS,
-  FAQS,
+  TREATMENTS,
+  formatDate,
   formatPeso,
   formatTime,
-  formatDate,
 } from "./data/clinicData.js";
 
-// BATCH 2 PAGES
+import SmileAtelierHome from "./pages/SmileAtelierHome.jsx";
+
+import TreatmentCollectionPage from "./pages/TreatmentCollectionPage.jsx";
 import TreatmentDetailsPage from "./pages/TreatmentDetailsPage.jsx";
+
+import DentistCollectionPage from "./pages/DentistCollectionPage.jsx";
 import DentistProfilePage from "./pages/DentistProfilePage.jsx";
+
 import AppointmentCalendarPage from "./pages/AppointmentCalendarPage.jsx";
 import AppointmentManagementPage from "./pages/AppointmentManagementPage.jsx";
-// BATCH 3 — CLINIC OPERATIONS
+
 import StaffLayout from "./components/StaffLayout.jsx";
 
 import StaffDashboardPage from "./pages/staff/DashboardPage.jsx";
-
 import AppointmentDeskPage from "./pages/staff/AppointmentDeskPage.jsx";
-
 import DentistSchedulesPage from "./pages/staff/DentistSchedulesPage.jsx";
-
 import TreatmentManagementPage from "./pages/staff/TreatmentManagementPage.jsx";
 
-// BATCH 4 — REPORTS, INSIGHTS, SETTINGS, BACKUPS
 import ReportsPage from "./pages/staff/ReportsPage.jsx";
-
 import TreatmentInsightsPage from "./pages/staff/TreatmentInsightsPage.jsx";
-
 import ClinicSettingsPage from "./pages/staff/ClinicSettingsPage.jsx";
+import DataVaultPage from "./pages/staff/DataVaultPage.jsx";
 
-import DataCenterPage from "./pages/staff/DataCenterPage.jsx";
+import SiteEnhancements from "./components/SiteEnhancements.jsx";
+
+import "./styles/smile-staff-batch4.css";
+import "./styles/smile-staff-batch5.css";
+
+/* ==========================================
+   YOUR SMILE.
+   ARCHITECTURAL REBUILD BATCHES 1–5
+
+   Public Website + Staff Management
+   Frontend demonstration only
+========================================== */
 
 const STORAGE_KEY = "your-smile-demo-requests-v1";
 
-// BATCH 5 — PREMIUM WEBSITE ENHANCEMENTS
-import SiteEnhancements from "./components/SiteEnhancements.jsx";
-
-const NAV_ITEMS = [
-  { label: "Home", to: "/" },
-  { label: "Treatments", to: "/treatments" },
-  { label: "Our Dentists", to: "/dentists" },
-  { label: "Calendar", to: "/calendar" },
-  { label: "My Requests", to: "/manage" },
+const MENU_ITEMS = [
+  {
+    label: "Home",
+    to: "/",
+  },
+  {
+    label: "Treatments",
+    to: "/treatments",
+  },
+  {
+    label: "Our Dentists",
+    to: "/dentists",
+  },
+  {
+    label: "Calendar",
+    to: "/calendar",
+  },
+  {
+    label: "My Requests",
+    to: "/manage",
+  },
 ];
 
+/* ==========================================
+   DATE UTILITIES
+========================================== */
+
 function localDateKey(date) {
-  const year = date.getFullYear();
-
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, "0");
-
-  const day = String(
-    date.getDate()
-  ).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
 }
 
-function dateAfter(days) {
+function dateAfter(days = 0) {
   const date = new Date();
 
   date.setHours(12, 0, 0, 0);
@@ -101,72 +116,104 @@ function dateAfter(days) {
   return localDateKey(date);
 }
 
+function firstBookableDay() {
+  const date = new Date(
+    `${dateAfter(1)}T12:00:00`
+  );
+
+  while (date.getDay() === 0) {
+    date.setDate(date.getDate() + 1);
+  }
+
+  return localDateKey(date);
+}
+
+/* ==========================================
+   READ LOCAL REQUESTS
+========================================== */
+
 function readRequests() {
   try {
-    const saved = JSON.parse(
-      window.localStorage.getItem(STORAGE_KEY) || "[]"
+    const parsed = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || "[]"
     );
 
-    if (!Array.isArray(saved)) return [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
 
-    return saved.filter(
+    return parsed.filter(
       (item) =>
         item &&
         typeof item.id === "string" &&
+        typeof item.alias === "string" &&
+        typeof item.serviceId === "string" &&
+        typeof item.doctorId === "string" &&
         typeof item.date === "string" &&
-        typeof item.time === "string"
+        typeof item.time === "string" &&
+        ["requested", "cancelled"].includes(
+          item.status
+        )
     );
   } catch {
     return [];
   }
 }
 
+/* ==========================================
+   SCROLL TO TOP + PAGE TITLES
+========================================== */
+
 function ScrollToTop() {
-  const location = useLocation();
+  const { pathname } = useLocation();
 
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "instant",
-    });
+    window.scrollTo(0, 0);
 
     const titles = {
       "/": "Home",
-      "/treatments": "Treatments",
-      "/dentists": "Our Dentists",
-      "/appointments": "Appointments",
-      "/calendar": "Appointment Calendar",
-      "/manage": "Demo Request Manager",
-      "/staff": "Clinic Dashboard",
+      "/treatments": "Treatment Collection",
+      "/dentists": "People Journal",
+      "/appointments": "Appointment Preview",
+      "/calendar": "Appointment Atelier",
+      "/manage": "My Demo Requests",
+
+      "/staff": "Staff Dashboard",
       "/staff/appointments": "Appointment Desk",
       "/staff/schedules": "Dentist Schedules",
-      "/staff/treatments": "Treatment Management",
-      "/staff/reports": "Reports & Analytics",
+      "/staff/treatments": "Treatment Studio",
+      "/staff/reports": "Clinical Operations Reports",
       "/staff/insights": "Treatment Insights",
       "/staff/settings": "Clinic Settings",
-      "/staff/data": "Data & Backups",
+      "/staff/data": "Data Vault",
     };
 
-    const pageTitle = location.pathname.startsWith(
+    const section = pathname.startsWith(
       "/treatments/"
     )
-      ? "Treatment Details"
-      : location.pathname.startsWith("/dentists/")
-        ? "Dentist Profile"
-        : titles[location.pathname] || "Page Not Found";
+      ? "Treatment Journal"
+      : pathname.startsWith("/dentists/")
+        ? "Dentist Journal"
+        : titles[pathname] || "Page Not Found";
 
-    document.title = `${pageTitle} | YOUR SMILE.`;
-  }, [location.pathname]);
+    document.title = `${section} | YOUR SMILE.`;
+  }, [pathname]);
 
   return null;
 }
+
+/* ==========================================
+   BRAND MARK
+========================================== */
 
 function BrandMark() {
   return (
     <span className="ys-brand">
       <span className="ys-brand-symbol">
-        <Smile size={23} strokeWidth={1.65} />
+        <Smile
+          size={23}
+          strokeWidth={1.65}
+        />
       </span>
 
       <span className="ys-brand-word">
@@ -176,36 +223,41 @@ function BrandMark() {
   );
 }
 
+/* ==========================================
+   PUBLIC HEADER
+
+   STAFF DEMO BUTTON INCLUDED
+   DIRECT ROUTE: /staff
+========================================== */
+
 function Header() {
-  const location = useLocation();
-
   const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [location.pathname]);
 
   useEffect(() => {
     if (!menuOpen) return;
 
-    function handleEscape(event) {
+    const onKey = (event) => {
       if (event.key === "Escape") {
         setMenuOpen(false);
       }
-    }
+    };
 
-    window.addEventListener("keydown", handleEscape);
+    window.addEventListener(
+      "keydown",
+      onKey
+    );
 
-    return () => {
+    return () =>
       window.removeEventListener(
         "keydown",
-        handleEscape
+        onKey
       );
-    };
   }, [menuOpen]);
 
   return (
     <>
+      {/* ANNOUNCEMENT BAR */}
+
       <div className="ys-announcement">
         <span>
           YOUR SMILE — A PREMIUM DENTAL WEBSITE CONCEPT
@@ -217,14 +269,22 @@ function Header() {
         </Link>
       </div>
 
+      {/* MAIN HEADER */}
+
       <header className="ys-header">
         <div className="ys-container ys-header-inner">
+
+          {/* BRAND */}
+
           <Link
             to="/"
             aria-label="YOUR SMILE homepage"
+            onClick={() => setMenuOpen(false)}
           >
             <BrandMark />
           </Link>
+
+          {/* MAIN NAVIGATION */}
 
           <nav
             id="primary-navigation"
@@ -233,7 +293,7 @@ function Header() {
             }`}
             aria-label="Main navigation"
           >
-            {NAV_ITEMS.map((item) => (
+            {MENU_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -247,6 +307,17 @@ function Header() {
               </NavLink>
             ))}
 
+            {/* STAFF DEMO IN MOBILE MENU */}
+
+            <Link
+              className="ys3-staff-mobile"
+              to="/staff"
+              onClick={() => setMenuOpen(false)}
+            >
+              Staff Demo Dashboard
+              <LayoutDashboard size={17} />
+            </Link>
+
             <Link
               className="ys-mobile-appointment"
               to="/appointments"
@@ -257,7 +328,36 @@ function Header() {
             </Link>
           </nav>
 
+          {/* HEADER BUTTONS */}
+
           <div className="ys-header-actions">
+
+            {/* STAFF DEMO BUTTON */}
+
+            <Link
+              to="/staff"
+              className="sm4-staff-access"
+              aria-label="Open Staff Demo Dashboard"
+              title="Open Staff Demo Dashboard"
+              onClick={() => setMenuOpen(false)}
+            >
+              <LayoutDashboard
+                size={17}
+                strokeWidth={1.8}
+              />
+
+              <span>
+                STAFF DEMO
+              </span>
+
+              <ArrowUpRight
+                size={14}
+                className="sm4-staff-access-arrow"
+              />
+            </Link>
+
+            {/* APPOINTMENT BUTTON */}
+
             <Link
               className="ys-header-cta"
               to="/appointments"
@@ -266,22 +366,29 @@ function Header() {
               <ArrowUpRight size={17} />
             </Link>
 
+            {/* MOBILE MENU */}
+
             <button
               type="button"
               className="ys-menu-button"
               aria-label={
-                menuOpen ? "Close menu" : "Open menu"
+                menuOpen
+                  ? "Close menu"
+                  : "Open menu"
               }
               aria-expanded={menuOpen}
               aria-controls="primary-navigation"
               onClick={() =>
-                setMenuOpen((value) => !value)
+                setMenuOpen((open) => !open)
               }
             >
-              {menuOpen
-                ? <X size={23} />
-                : <Menu size={23} />}
+              {menuOpen ? (
+                <X size={23} />
+              ) : (
+                <Menu size={23} />
+              )}
             </button>
+
           </div>
         </div>
       </header>
@@ -289,11 +396,18 @@ function Header() {
   );
 }
 
+/* ==========================================
+   PUBLIC FOOTER
+========================================== */
+
 function Footer() {
   return (
     <footer className="ys-footer">
       <div className="ys-container">
         <div className="ys-footer-main">
+
+          {/* INTRODUCTION */}
+
           <div className="ys-footer-intro">
             <div className="ys-footer-brand">
               <BrandMark />
@@ -319,31 +433,60 @@ function Footer() {
             </Link>
           </div>
 
+          {/* LINKS */}
+
           <div className="ys-footer-links">
             <span>EXPLORE</span>
-            <Link to="/">Homepage</Link>
-            <Link to="/treatments">Treatments</Link>
-            <Link to="/dentists">Our Dentists</Link>
-            <Link to="/appointments">Appointments</Link>
-            <Link to="/calendar">Calendar</Link>
-            <Link to="/manage">My Demo Requests</Link>
+
+            <Link to="/">
+              Homepage
+            </Link>
+
+            <Link to="/treatments">
+              Treatments
+            </Link>
+
+            <Link to="/dentists">
+              Our Dentists
+            </Link>
+
+            <Link to="/appointments">
+              Appointments
+            </Link>
+
+            <Link to="/calendar">
+              Calendar
+            </Link>
+
+            <Link to="/manage">
+              My Demo Requests
+            </Link>
+
+            <Link to="/staff">
+              Staff Demo Dashboard
+            </Link>
           </div>
+
+          {/* CONCEPT INFORMATION */}
 
           <div className="ys-footer-links">
             <span>THE CONCEPT</span>
 
             <p>
-              Philippines-inspired dental clinic website.
+              Dental website prototype with
+              fictional service and provider
+              information.
             </p>
 
             <p>
-              Names, portraits, treatment prices, and
-              appointment slots are illustrative.
+              Illustrative fees, times, photos
+              and local-only request records.
             </p>
 
             <p>
-              No actual dental service or booking
-              is provided.
+              No actual dental care,
+              patient database or real
+              booking is provided.
             </p>
           </div>
         </div>
@@ -353,647 +496,20 @@ function Footer() {
             © {new Date().getFullYear()} YOUR SMILE.
           </span>
 
-          <span>{BRAND.developer}</span>
+          <span>
+            {BRAND.developer}
+          </span>
         </div>
       </div>
     </footer>
   );
 }
 
-function SectionHeading({
-  eyebrow,
-  title,
-  italic,
-  description,
-}) {
-  return (
-    <div className="ys-section-heading">
-      <div>
-        <span className="ys-eyebrow">
-          {eyebrow}
-        </span>
-
-        <h2>
-          {title} <em>{italic}</em>
-        </h2>
-      </div>
-
-      {description && (
-        <p>{description}</p>
-      )}
-    </div>
-  );
-}
-
-function TreatmentCard({ treatment }) {
-  return (
-    <article className="ys-treatment-card">
-      <Link
-        to={`/treatments/${treatment.id}`}
-        className="ys-treatment-card-image"
-        aria-label={`View ${treatment.name} details`}
-      >
-        <img
-          src={treatment.image}
-          alt={`Illustrative ${treatment.name} treatment`}
-          loading="lazy"
-        />
-
-        <span>
-          {treatment.number} / 06
-        </span>
-      </Link>
-
-      <div className="ys-treatment-card-body">
-        <span className="ys-eyebrow">
-          {treatment.category}
-        </span>
-
-        <h3>{treatment.name}</h3>
-
-        <p>{treatment.short}</p>
-
-        <div className="ys-treatment-card-meta">
-          <span>
-            <Clock3 size={15} />
-            {treatment.duration} min
-          </span>
-
-          <span>
-            From {formatPeso(treatment.priceFrom)}*
-          </span>
-        </div>
-
-        <div className="ys2-card-actions">
-          <Link
-            to={`/treatments/${treatment.id}`}
-            className="ys-text-link"
-          >
-            View Details
-            <ArrowRight size={17} />
-          </Link>
-
-          <Link
-            to={`/calendar?service=${treatment.id}`}
-            className="ys2-card-book-link"
-          >
-            Book
-            <ArrowUpRight size={16} />
-          </Link>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function DentistCard({ dentist }) {
-  return (
-    <article className="ys-dentist-card">
-      <Link
-        to={`/dentists/${dentist.id}`}
-        className="ys-dentist-photo"
-        aria-label={`View sample profile of ${dentist.name}`}
-      >
-        <img
-          src={dentist.image}
-          alt={`Illustrative portrait for ${dentist.name}`}
-          loading="lazy"
-        />
-
-        <span>SAMPLE PROFILE</span>
-      </Link>
-
-      <div className="ys-dentist-content">
-        <span className="ys-eyebrow">
-          {dentist.tag}
-        </span>
-
-        <h3>{dentist.name}</h3>
-
-        <strong>{dentist.role}</strong>
-
-        <p>{dentist.bio}</p>
-
-        <div className="ys2-card-actions">
-          <Link
-            to={`/dentists/${dentist.id}`}
-            className="ys-text-link"
-          >
-            View Profile
-            <ArrowRight size={17} />
-          </Link>
-
-          <Link
-            to={`/calendar?doctor=${dentist.id}`}
-            className="ys2-card-book-link"
-          >
-            Calendar
-            <ArrowUpRight size={16} />
-          </Link>
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function HomePage() {
-  const featured = TREATMENTS.filter(
-    (item) => item.featured
-  );
-
-  return (
-    <>
-      <section className="ys-hero">
-        <div className="ys-container ys-hero-grid">
-          <div className="ys-hero-copy">
-            <span className="ys-eyebrow">
-              A MORE THOUGHTFUL WAY TO SMILE
-            </span>
-
-            <h1>
-              Good care.
-              <br />
-              Great smiles.
-              <br />
-              <em>A little more you.</em>
-            </h1>
-
-            <p>
-              A modern dental experience built around
-              clarity, comfort and care that feels personal.
-            </p>
-
-            <div className="ys-hero-actions">
-              <Link
-                className="ys-button"
-                to="/calendar"
-              >
-                Explore the Calendar
-                <ArrowUpRight size={18} />
-              </Link>
-
-              <Link
-                className="ys-link-arrow"
-                to="/treatments"
-              >
-                Explore treatments
-                <ArrowRight size={18} />
-              </Link>
-            </div>
-
-            <div className="ys-hero-proof">
-              <span className="ys-hero-proof-icon">
-                <ShieldCheck size={20} />
-              </span>
-
-              <span>
-                <strong>
-                  Designed with care in mind
-                </strong>
-
-                <small>
-                  A modern dental website experience
-                </small>
-              </span>
-            </div>
-          </div>
-
-          <div className="ys-hero-visual">
-            <div className="ys-hero-image-shape">
-              <img
-                src={IMAGES.hero}
-                alt="Illustrative modern dental care setting"
-                fetchPriority="high"
-              />
-            </div>
-
-            <div className="ys-hero-orbit ys-hero-orbit-one" />
-            <div className="ys-hero-orbit ys-hero-orbit-two" />
-
-            <div className="ys-floating-card">
-              <span>
-                <Heart size={20} />
-              </span>
-
-              <div>
-                <strong>Smiles first.</strong>
-
-                <small>
-                  Thoughtful care, thoughtfully designed.
-                </small>
-              </div>
-            </div>
-
-            <div className="ys-hero-image-label">
-              YOUR SMILE / THE NEW EXPERIENCE
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="ys-benefits">
-        <div className="ys-container ys-benefits-grid">
-          <div>
-            <Smile size={25} strokeWidth={1.4} />
-
-            <span>
-              <strong>Personalized care</strong>
-              <small>Consultation-led experiences</small>
-            </span>
-          </div>
-
-          <div>
-            <CalendarDays size={25} strokeWidth={1.4} />
-
-            <span>
-              <strong>Simple scheduling</strong>
-              <small>Explore sample appointment slots</small>
-            </span>
-          </div>
-
-          <div>
-            <Sparkles size={25} strokeWidth={1.4} />
-
-            <span>
-              <strong>Modern atmosphere</strong>
-              <small>Comfortable and approachable</small>
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <section className="ys-section ys-container">
-        <SectionHeading
-          eyebrow="DISCOVER YOUR CARE"
-          title="Every smile has"
-          italic="its own story."
-          description="Explore preventive, cosmetic, restorative and orthodontic treatments."
-        />
-
-        <div className="ys-treatment-grid">
-          {featured.map((treatment) => (
-            <TreatmentCard
-              key={treatment.id}
-              treatment={treatment}
-            />
-          ))}
-        </div>
-
-        <div className="ys-centered-action">
-          <Link
-            className="ys-button ys-button-outline"
-            to="/treatments"
-          >
-            Explore All Treatments
-            <ArrowUpRight size={18} />
-          </Link>
-        </div>
-      </section>
-
-      <section className="ys-story-section">
-        <div className="ys-story-visual">
-          <img
-            src={IMAGES.clinic}
-            alt="Illustrative modern dental clinic interior"
-            loading="lazy"
-          />
-
-          <div className="ys-story-badge">
-            <Sparkles size={20} />
-            <span>CARE, REIMAGINED</span>
-          </div>
-        </div>
-
-        <div className="ys-story-copy">
-          <span className="ys-eyebrow">
-            A SPACE TO FEEL AT EASE
-          </span>
-
-          <h2>
-            The little details
-            <br />
-            make a <em>big difference.</em>
-          </h2>
-
-          <p>
-            YOUR SMILE is more than a treatment catalog.
-            It's a digital experience that makes browsing
-            services and planning visits feel welcoming
-            and simple.
-          </p>
-
-          <div className="ys-story-points">
-            <div>
-              <CheckCircle2 size={21} />
-              Clear treatment information
-            </div>
-
-            <div>
-              <CheckCircle2 size={21} />
-              Convenient appointment previews
-            </div>
-
-            <div>
-              <CheckCircle2 size={21} />
-              Accessible, mobile-friendly navigation
-            </div>
-          </div>
-
-          <Link
-            to="/dentists"
-            className="ys-text-link"
-          >
-            Meet the Concept Team
-            <ArrowRight size={18} />
-          </Link>
-        </div>
-      </section>
-
-      <section className="ys-section ys-container">
-        <SectionHeading
-          eyebrow="THE PEOPLE BEHIND THE EXPERIENCE"
-          title="A familiar face."
-          italic="A gentler feeling."
-          description="Sample team profiles that can later be customized with verified dentist credentials and consented photography."
-        />
-
-        <div className="ys-dentist-grid">
-          {DENTISTS.map((dentist) => (
-            <DentistCard
-              key={dentist.id}
-              dentist={dentist}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="ys-faq-section">
-        <div className="ys-container ys-faq-grid">
-          <div>
-            <span className="ys-eyebrow">
-              GOOD TO KNOW
-            </span>
-
-            <h2>
-              A little clarity
-              <br />
-              goes a <em>long way.</em>
-            </h2>
-
-            <p>
-              Useful information about this dental
-              website concept and appointment preview.
-            </p>
-          </div>
-
-          <div className="ys-faq-list">
-            {FAQS.map((item, index) => (
-              <details key={item.question}>
-                <summary>
-                  <span>
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-
-                  {item.question}
-
-                  <span className="ys-faq-plus">
-                    +
-                  </span>
-                </summary>
-
-                <p>{item.answer}</p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="ys-last-cta">
-        <div className="ys-container">
-          <span className="ys-eyebrow ys-eyebrow-light">
-            YOUR NEXT SMILE STARTS HERE
-          </span>
-
-          <h2>
-            Ready for a more
-            <br />
-            <em>comfortable experience?</em>
-          </h2>
-
-          <Link
-            className="ys-button ys-button-light"
-            to="/calendar"
-          >
-            Preview Appointment Calendar
-            <ArrowUpRight size={18} />
-          </Link>
-        </div>
-      </section>
-    </>
-  );
-}
-
-function TreatmentsPage() {
-  const [category, setCategory] = useState(
-    "All Treatments"
-  );
-
-  const [search, setSearch] = useState("");
-
-  const visible = useMemo(() => {
-    return TREATMENTS.filter((item) => {
-      const matchesCategory =
-        category === "All Treatments" ||
-        item.category === category;
-
-      const query = search.trim().toLowerCase();
-
-      const matchesSearch =
-        !query ||
-        `${item.name} ${item.description} ${item.category}`
-          .toLowerCase()
-          .includes(query);
-
-      return matchesCategory && matchesSearch;
-    });
-  }, [category, search]);
-
-  return (
-    <div className="ys-inner-page">
-      <section className="ys-page-hero">
-        <div className="ys-container ys-page-hero-grid">
-          <div>
-            <span className="ys-eyebrow">
-              YOUR SMILE / THE TREATMENTS
-            </span>
-
-            <h1>
-              Care that feels
-              <br />
-              <em>just right.</em>
-            </h1>
-
-            <p>
-              Clear information, thoughtful options,
-              and a more comfortable way to explore
-              your dental care journey.
-            </p>
-          </div>
-
-          <div className="ys-page-hero-photo">
-            <img
-              src={IMAGES.treatment}
-              alt="Illustrative dental treatment setting"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="ys-section ys-container">
-        <div className="ys-section-heading">
-          <div>
-            <span className="ys-eyebrow">
-              EXPLORE THE COLLECTION
-            </span>
-
-            <h2>
-              Find your <em>treatment.</em>
-            </h2>
-          </div>
-
-          <div className="ys-search">
-            <Search size={18} />
-
-            <input
-              type="search"
-              aria-label="Search treatments"
-              placeholder="Search treatment..."
-              value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
-            />
-          </div>
-        </div>
-
-        <div
-          className="ys-category-tabs"
-          role="group"
-          aria-label="Treatment categories"
-        >
-          {CATEGORIES.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={
-                category === item
-                  ? "is-active"
-                  : ""
-              }
-              aria-pressed={category === item}
-              onClick={() => setCategory(item)}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-
-        <div className="ys-treatment-grid">
-          {visible.map((treatment) => (
-            <TreatmentCard
-              key={treatment.id}
-              treatment={treatment}
-            />
-          ))}
-        </div>
-
-        {visible.length === 0 && (
-          <div className="ys-empty-state">
-            <Search size={30} />
-
-            <h3>No treatments found.</h3>
-
-            <p>
-              Try another category or search term.
-            </p>
-
-            <button
-              type="button"
-              className="ys-button"
-              onClick={() => {
-                setCategory("All Treatments");
-                setSearch("");
-              }}
-            >
-              Clear Filters
-              <ArrowRight size={17} />
-            </button>
-          </div>
-        )}
-
-        <p className="ys-disclaimer">
-          *All rates and service descriptions are
-          illustrative. Actual dental care requires
-          professional assessment.
-        </p>
-      </section>
-    </div>
-  );
-}
-
-function DentistsPage() {
-  return (
-    <div className="ys-inner-page">
-      <section className="ys-page-hero ys-page-hero-soft">
-        <div className="ys-container">
-          <span className="ys-eyebrow">
-            YOUR SMILE / THE CONCEPT TEAM
-          </span>
-
-          <h1>
-            People who make
-            <br />
-            <em>care feel personal.</em>
-          </h1>
-
-          <p>
-            An illustrative team section showing how
-            a clinic could introduce its dental professionals.
-          </p>
-        </div>
-      </section>
-
-      <section className="ys-section ys-container">
-        <SectionHeading
-          eyebrow="GET TO KNOW THE TEAM"
-          title="Meet your"
-          italic="smile guides."
-          description="Explore sample individual dentist profiles, areas of care and appointment previews."
-        />
-
-        <div className="ys-dentist-grid">
-          {DENTISTS.map((dentist) => (
-            <DentistCard
-              key={dentist.id}
-              dentist={dentist}
-            />
-          ))}
-        </div>
-
-        <div className="ys-team-notice">
-          <ShieldCheck size={23} />
-
-          <p>
-            <strong>Portfolio demonstration:</strong>{" "}
-            All dentist names, roles and photographs
-            are fictional or illustrative. This is
-            not an operating dental practice.
-          </p>
-        </div>
-      </section>
-    </div>
-  );
-}
+/* ==========================================
+   APPOINTMENTS PAGE
+
+   ORIGINAL REQUEST ENGINE PRESERVED
+========================================== */
 
 function AppointmentsPage({
   requests,
@@ -1002,95 +518,71 @@ function AppointmentsPage({
 }) {
   const [params] = useSearchParams();
 
-  const requestedService = params.get("service");
-  const requestedDoctor = params.get("doctor");
+  const requestedService = params.get(
+    "service"
+  );
+
+  const requestedDoctor = params.get(
+    "doctor"
+  );
 
   const [form, setForm] = useState(() => ({
     alias: "",
+
     serviceId: TREATMENTS.some(
-      (item) => item.id === requestedService
+      (t) => t.id === requestedService
     )
       ? requestedService
       : TREATMENTS[0].id,
 
     doctorId: DENTISTS.some(
-      (item) => item.id === requestedDoctor
+      (d) => d.id === requestedDoctor
     )
       ? requestedDoctor
       : DENTISTS[0].id,
 
-    date: dateAfter(1),
+    date: firstBookableDay(),
+
     time: TIME_SLOTS[0],
   }));
 
   const [feedback, setFeedback] = useState("");
-  const [success, setSuccess] = useState(null);
 
-  useEffect(() => {
-    if (
-      requestedService &&
-      TREATMENTS.some(
-        (item) => item.id === requestedService
-      )
-    ) {
-      setForm((current) => ({
-        ...current,
-        serviceId: requestedService,
-      }));
-    }
-  }, [requestedService]);
+  const [successId, setSuccessId] = useState("");
 
-  useEffect(() => {
-    if (
-      requestedDoctor &&
-      DENTISTS.some(
-        (item) => item.id === requestedDoctor
-      )
-    ) {
-      setForm((current) => ({
-        ...current,
-        doctorId: requestedDoctor,
-      }));
-    }
-  }, [requestedDoctor]);
-
-  const treatment = TREATMENTS.find(
+  const service = TREATMENTS.find(
     (item) => item.id === form.serviceId
   );
 
-  const dentist = DENTISTS.find(
+  const doctor = DENTISTS.find(
     (item) => item.id === form.doctorId
   );
 
-  const chosenDate = new Date(
+  const day = new Date(
     `${form.date}T12:00:00`
   );
 
   const sunday =
-    !Number.isNaN(chosenDate.getTime()) &&
-    chosenDate.getDay() === 0;
+    !Number.isNaN(day.getTime()) &&
+    day.getDay() === 0;
 
-  const occupiedSlots = requests
+  const occupied = requests
     .filter(
-      (request) =>
-        request.doctorId === form.doctorId &&
-        request.date === form.date &&
-        request.status === "requested"
+      (item) =>
+        item.doctorId === form.doctorId &&
+        item.date === form.date &&
+        item.status === "requested"
     )
-    .map((request) => request.time);
+    .map((item) => item.time);
 
-  const slotTaken = occupiedSlots.includes(
-    form.time
-  );
-
-  function update(key, value) {
+  function change(key, value) {
     setForm((current) => ({
       ...current,
       [key]: value,
     }));
 
     setFeedback("");
-    setSuccess(null);
+    setSuccessId("");
   }
 
   function submit(event) {
@@ -1099,7 +591,7 @@ function AppointmentsPage({
     const result = onCreateRequest(form);
 
     if (result.ok) {
-      setSuccess(result);
+      setSuccessId(result.id);
       setFeedback("");
 
       setForm((current) => ({
@@ -1107,13 +599,20 @@ function AppointmentsPage({
         alias: "",
       }));
     } else {
-      setSuccess(null);
-      setFeedback(result.error);
+      setSuccessId("");
+
+      setFeedback(
+        result.error ||
+          "Unable to save demo request."
+      );
     }
   }
 
   return (
     <div className="ys-inner-page">
+
+      {/* APPOINTMENT HERO */}
+
       <section className="ys-page-hero ys-page-hero-booking">
         <div className="ys-container">
           <span className="ys-eyebrow">
@@ -1127,11 +626,14 @@ function AppointmentsPage({
           </h1>
 
           <p>
-            Select your treatment, sample dentist,
-            preferred date and demo appointment time.
+            Choose a fictional dentist,
+            treatment interest, day and
+            demonstration time.
           </p>
         </div>
       </section>
+
+      {/* APPOINTMENT FORM */}
 
       <section className="ys-section ys-container">
         <div className="ys-booking-grid">
@@ -1140,26 +642,34 @@ function AppointmentsPage({
             onSubmit={submit}
           >
             <span className="ys-eyebrow">
-              01 / PLAN YOUR VISIT
+              01 / PLAN A DEMO VISIT
             </span>
 
             <h2>
-              It starts with <em>a hello.</em>
+              It starts with{" "}
+              <em>a hello.</em>
             </h2>
 
+            {/* TREATMENT */}
+
             <label className="ys-field">
-              <span>SELECT TREATMENT</span>
+              <span>
+                SELECT TREATMENT
+              </span>
 
               <select
                 value={form.serviceId}
-                onChange={(event) =>
-                  update("serviceId", event.target.value)
+                onChange={(e) =>
+                  change(
+                    "serviceId",
+                    e.target.value
+                  )
                 }
               >
                 {TREATMENTS.map((item) => (
                   <option
-                    value={item.id}
                     key={item.id}
+                    value={item.id}
                   >
                     {item.name}
                   </option>
@@ -1167,182 +677,251 @@ function AppointmentsPage({
               </select>
             </label>
 
+            {/* DENTIST */}
+
             <label className="ys-field">
-              <span>PREFERRED SAMPLE DENTIST</span>
+              <span>
+                PREFERRED FICTIONAL DENTIST
+              </span>
 
               <select
                 value={form.doctorId}
-                onChange={(event) =>
-                  update("doctorId", event.target.value)
+                onChange={(e) =>
+                  change(
+                    "doctorId",
+                    e.target.value
+                  )
                 }
               >
                 {DENTISTS.map((item) => (
                   <option
-                    value={item.id}
                     key={item.id}
+                    value={item.id}
                   >
-                    {item.name} — {item.role}
+                    {item.name}
                   </option>
                 ))}
               </select>
             </label>
 
+            {/* VISITOR ALIAS */}
+
             <label className="ys-field">
-              <span>SAMPLE NAME OR ALIAS</span>
+              <span>
+                FICTIONAL NAME / ALIAS
+              </span>
 
               <input
                 type="text"
-                placeholder="e.g. Demo Visitor"
                 required
                 minLength={2}
                 maxLength={50}
+                placeholder="e.g. Demo Visitor"
                 value={form.alias}
-                onChange={(event) =>
-                  update("alias", event.target.value)
+                onChange={(e) =>
+                  change(
+                    "alias",
+                    e.target.value
+                  )
                 }
               />
             </label>
 
+            {/* DATE */}
+
             <label className="ys-field">
-              <span>PREFERRED DATE</span>
+              <span>
+                PREFERRED DEMO DATE
+              </span>
 
               <input
                 type="date"
+                required
                 min={dateAfter(1)}
                 max={dateAfter(180)}
-                required
                 value={form.date}
-                onChange={(event) =>
-                  update("date", event.target.value)
-                }
+                onChange={(e) => {
+                  change(
+                    "date",
+                    e.target.value
+                  );
+
+                  setForm((current) => ({
+                    ...current,
+                    date: e.target.value,
+                    time: TIME_SLOTS[0],
+                  }));
+                }}
               />
             </label>
 
-            {sunday ? (
+            {sunday && (
               <div
                 className="ys-field-notice"
                 role="status"
               >
-                Sundays are disabled in our demo
-                schedule. Select another date.
+                Sundays are unavailable in
+                the sample calendar. Please
+                choose Monday–Saturday.
               </div>
-            ) : (
-              <>
-                <span className="ys-field-title">
-                  AVAILABLE DEMO TIMES
-                </span>
-
-                <div
-                  className="ys-time-slots"
-                  role="group"
-                  aria-label="Select appointment time"
-                >
-                  {TIME_SLOTS.map((time) => {
-                    const taken = occupiedSlots.includes(time);
-
-                    return (
-                      <button
-                        key={time}
-                        type="button"
-                        disabled={taken}
-                        aria-pressed={form.time === time}
-                        className={
-                          form.time === time
-                            ? "is-selected"
-                            : ""
-                        }
-                        onClick={() =>
-                          update("time", time)
-                        }
-                      >
-                        {formatTime(time)}
-
-                        {taken && <small>Taken</small>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
             )}
 
+            {/* TIME SLOTS */}
+
+            <span className="ys-field-title">
+              SAMPLE TIME OPTIONS
+            </span>
+
+            <div
+              className="ys-time-slots"
+              role="group"
+              aria-label="Appointment time"
+            >
+              {TIME_SLOTS.map((time) => {
+                const taken = occupied.includes(
+                  time
+                );
+
+                return (
+                  <button
+                    key={time}
+                    type="button"
+                    disabled={
+                      taken || sunday
+                    }
+                    aria-pressed={
+                      form.time === time
+                    }
+                    className={
+                      form.time === time
+                        ? "is-selected"
+                        : ""
+                    }
+                    onClick={() =>
+                      change("time", time)
+                    }
+                  >
+                    {formatTime(time)}
+
+                    {taken && (
+                      <small>
+                        Occupied
+                      </small>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ERROR MESSAGE */}
+
             {feedback && (
-              <div
+              <p
                 className="ys-form-error"
                 role="alert"
               >
                 {feedback}
-              </div>
+              </p>
             )}
 
+            {/* SUBMIT */}
+
             <button
-              className="ys-button ys-submit"
               type="submit"
-              disabled={sunday || slotTaken}
+              className="ys-button ys-submit"
+              disabled={
+                sunday ||
+                occupied.includes(form.time)
+              }
             >
               Save Demo Request
               <ArrowUpRight size={18} />
             </button>
 
             <p className="ys-disclaimer">
-              Portfolio demonstration only.
-              Use a fictional alias and do not
-              enter medical information.
+              Browser-only demonstration.
+              Use a fictional alias; do not
+              submit medical information.
             </p>
           </form>
+
+          {/* BOOKING SUMMARY */}
 
           <aside className="ys-booking-aside">
             <div className="ys-booking-summary">
               <span className="ys-eyebrow">
-                YOUR VISIT AT A GLANCE
+                YOUR DEMO VISIT AT A GLANCE
               </span>
 
               <h3>
-                Your appointment <em>preview.</em>
+                Your appointment{" "}
+                <em>preview.</em>
               </h3>
 
               <div className="ys-summary-photo">
                 <img
                   src={IMAGES.clinic}
-                  alt="Illustrative dental clinic interior"
+                  alt="Illustrative clinic environment"
                   loading="lazy"
                 />
               </div>
 
               <div className="ys-summary-rows">
+
+                {/* SERVICE */}
+
                 <div>
-                  <Stethoscope size={18} />
+                  <ShieldCheck size={18} />
 
                   <span>
-                    <small>Treatment</small>
-                    <strong>{treatment?.name}</strong>
+                    <small>
+                      Treatment interest
+                    </small>
+
+                    <strong>
+                      {service?.name}
+                    </strong>
                   </span>
                 </div>
 
+                {/* DENTIST */}
+
                 <div>
-                  <Users size={18} />
+                  <Smile size={18} />
 
                   <span>
-                    <small>Sample dentist</small>
-                    <strong>{dentist?.name}</strong>
+                    <small>
+                      Sample provider
+                    </small>
+
+                    <strong>
+                      {doctor?.name}
+                    </strong>
                   </span>
                 </div>
+
+                {/* DATE */}
 
                 <div>
                   <CalendarDays size={18} />
 
                   <span>
-                    <small>Preferred date</small>
+                    <small>Date</small>
+
                     <strong>
                       {formatDate(form.date)}
                     </strong>
                   </span>
                 </div>
 
+                {/* TIME */}
+
                 <div>
                   <Clock3 size={18} />
 
                   <span>
-                    <small>Preferred time</small>
+                    <small>Time</small>
+
                     <strong>
                       {formatTime(form.time)}
                     </strong>
@@ -1352,53 +931,61 @@ function AppointmentsPage({
 
               <div className="ys-summary-price">
                 <span>
-                  Illustrative rate from
+                  Illustrative starting figure
                 </span>
 
                 <strong>
-                  {formatPeso(treatment?.priceFrom)}
+                  {formatPeso(
+                    service?.priceFrom || 0
+                  )}
                 </strong>
               </div>
 
               <p className="ys-summary-note">
-                No actual clinic booking is made.
-                This browser saves a demo record only.
+                No real appointment or payment
+                is made.
               </p>
             </div>
           </aside>
         </div>
 
-        {success && (
+        {/* SUCCESS MESSAGE */}
+
+        {successId && (
           <section
             className="ys-success"
             role="status"
             aria-live="polite"
           >
-            <CheckCircle2 size={35} />
+            <CheckCircle2 size={34} />
 
             <span className="ys-eyebrow">
               DEMO REQUEST SAVED
             </span>
 
             <h2>
-              Your preview is <em>on the list.</em>
+              Your sample request{" "}
+              <em>is on the list.</em>
             </h2>
 
             <p>
-              Sample reference:
-              {" "}
-              <strong>{success.id}</strong>
+              Local reference:{" "}
+              <strong>
+                {successId}
+              </strong>
             </p>
 
             <Link
               to="/manage"
               className="ys-text-link"
             >
-              Open Request Manager
+              View My Demo Requests
               <ArrowRight size={17} />
             </Link>
           </section>
         )}
+
+        {/* RECENT REQUEST HISTORY */}
 
         <section className="ys-request-history">
           <div className="ys-section-heading">
@@ -1408,90 +995,95 @@ function AppointmentsPage({
               </span>
 
               <h2>
-                Demo appointment <em>history.</em>
+                Recent demo{" "}
+                <em>requests.</em>
               </h2>
             </div>
 
             <Link
-              className="ys-text-link"
               to="/manage"
+              className="ys-text-link"
             >
-              Full Appointment Manager
+              Full Request Manager
               <ArrowRight size={17} />
             </Link>
           </div>
 
           {requests.length === 0 ? (
             <div className="ys-empty-state">
-              <CalendarCheck2 size={31} />
+              <CalendarDays size={30} />
 
-              <h3>No demo requests yet.</h3>
+              <h3>
+                No requests yet.
+              </h3>
 
               <p>
                 Use the form above to create
-                your first sample appointment.
+                a fictional appointment.
               </p>
             </div>
           ) : (
             <div className="ys-request-grid">
-              {[...requests].reverse().map(
-                (request) => {
-                  const service = TREATMENTS.find(
-                    (item) =>
-                      item.id === request.serviceId
-                  );
+              {[...requests]
+                .reverse()
+                .slice(0, 6)
+                .map((record) => (
+                  <article
+                    className="ys-request-card"
+                    key={record.id}
+                  >
+                    <div className="ys-request-top">
+                      <span className="ys-eyebrow">
+                        {record.id}
+                      </span>
 
-                  return (
-                    <article
-                      className="ys-request-card"
-                      key={request.id}
-                    >
-                      <div className="ys-request-top">
-                        <span className="ys-eyebrow">
-                          {request.id}
-                        </span>
+                      <span
+                        className={`ys-request-status ${
+                          record.status ===
+                          "cancelled"
+                            ? "is-cancelled"
+                            : ""
+                        }`}
+                      >
+                        {record.status}
+                      </span>
+                    </div>
 
-                        <span
-                          className={`ys-request-status ${
-                            request.status === "cancelled"
-                              ? "is-cancelled"
-                              : ""
-                          }`}
-                        >
-                          {request.status}
-                        </span>
-                      </div>
+                    <h3>
+                      {TREATMENTS.find(
+                        (t) =>
+                          t.id ===
+                          record.serviceId
+                      )?.name || "Demo visit"}
+                    </h3>
 
-                      <h3>
-                        {service?.name || "Dental visit"}
-                      </h3>
+                    <p>
+                      {formatDate(record.date)}
+                      {" · "}
+                      {formatTime(record.time)}
+                    </p>
 
-                      <p>
-                        {formatDate(request.date)}
-                        {" · "}
-                        {formatTime(request.time)}
-                      </p>
+                    <p>
+                      Demo alias: {record.alias}
+                    </p>
 
-                      <p>
-                        Demo alias: {request.alias}
-                      </p>
-
-                      {request.status === "requested" && (
-                        <button
-                          type="button"
-                          className="ys-cancel-btn"
-                          onClick={() =>
-                            onCancelRequest(request.id)
-                          }
-                        >
-                          Cancel Demo Request
-                          <X size={15} />
-                        </button>
-                      )}
-                    </article>
-                  );
-                }
-              )}
+                    {record.status ===
+                      "requested" && (
+                      <button
+                        type="button"
+                        className="ys-cancel-btn"
+                        onClick={() =>
+                          onCancelRequest(
+                            record.id
+                          )
+                        }
+                      >
+                        Cancel Demo Request
+                        <X size={15} />
+                      </button>
+                    )}
+                  </article>
+                ))}
             </div>
           )}
         </section>
@@ -1499,6 +1091,10 @@ function AppointmentsPage({
     </div>
   );
 }
+
+/* ==========================================
+   NOT FOUND PAGE
+========================================== */
 
 function NotFoundPage() {
   return (
@@ -1508,49 +1104,67 @@ function NotFoundPage() {
       </span>
 
       <h1>
-        Let's find your <em>way back.</em>
+        Let's find your{" "}
+        <em>way back.</em>
       </h1>
 
       <p>
-        This page isn't included in
-        the YOUR SMILE concept.
+        This page isn't part of the
+        YOUR SMILE demo.
       </p>
 
       <Link
         className="ys-button"
         to="/"
       >
+        <ArrowLeft size={18} />
         Return Home
-        <ArrowRight size={18} />
       </Link>
     </section>
   );
 }
 
+/* ==========================================
+   MAIN APP
+
+   ALL PUBLIC + STAFF ROUTES
+========================================== */
+
 export default function App() {
-  const location = useLocation();
+  const {
+    pathname,
+    search,
+  } = useLocation();
 
   const isStaffRoute =
-    location.pathname === "/staff" ||
-    location.pathname.startsWith("/staff/");
+    pathname === "/staff" ||
+    pathname.startsWith("/staff/");
 
   const [requests, setRequests] = useState(
     readRequests
   );
 
+  /* ========================================
+     SAVE APPOINTMENT REQUESTS LOCALLY
+  ======================================== */
+
   useEffect(() => {
     try {
-      window.localStorage.setItem(
+      localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify(requests)
       );
     } catch (error) {
       console.warn(
-        "Demo appointment storage unavailable:",
+        "Unable to save local demo requests:",
         error
       );
     }
   }, [requests]);
+
+  /* ========================================
+     CREATE DEMO APPOINTMENT
+  ======================================== */
 
   function createRequest(input) {
     const alias =
@@ -1558,11 +1172,14 @@ export default function App() {
         ? input.alias.trim()
         : "";
 
-    if (alias.length < 2 || alias.length > 50) {
+    if (
+      alias.length < 2 ||
+      alias.length > 50
+    ) {
       return {
         ok: false,
         error:
-          "Please enter a fictional alias between 2 and 50 characters.",
+          "Use a fictional alias between 2 and 50 characters.",
       };
     }
 
@@ -1574,11 +1191,26 @@ export default function App() {
       (item) => item.id === input.doctorId
     );
 
-    if (!validTreatment || !validDoctor) {
+    if (
+      !validTreatment ||
+      !validDoctor
+    ) {
       return {
         ok: false,
         error:
-          "Please select a valid treatment and dentist.",
+          "Choose a valid treatment and fictional dentist.",
+      };
+    }
+
+    /* DATE VALIDATION */
+
+    if (
+      typeof input.date !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(input.date)
+    ) {
+      return {
+        ok: false,
+        error: "Choose a valid date.",
       };
     }
 
@@ -1587,8 +1219,6 @@ export default function App() {
     );
 
     const validDate =
-      typeof input.date === "string" &&
-      /^\d{4}-\d{2}-\d{2}$/.test(input.date) &&
       !Number.isNaN(date.getTime()) &&
       localDateKey(date) === input.date &&
       input.date >= dateAfter(1) &&
@@ -1599,42 +1229,50 @@ export default function App() {
       return {
         ok: false,
         error:
-          "Select a valid Monday–Saturday date within the next 180 days.",
+          "Choose a Monday–Saturday within the next 180 days.",
       };
     }
 
-    if (!TIME_SLOTS.includes(input.time)) {
+    /* TIME VALIDATION */
+
+    if (
+      !TIME_SLOTS.includes(input.time)
+    ) {
       return {
         ok: false,
         error:
-          "Please select a valid appointment time.",
+          "Choose one of the available sample times.",
       };
     }
 
+    /* PREVENT OVERLAPPING APPOINTMENTS */
+
     const occupied = requests.some(
       (item) =>
-        item.doctorId === input.doctorId &&
+        item.status === "requested" &&
         item.date === input.date &&
         item.time === input.time &&
-        item.status === "requested"
+        item.doctorId === input.doctorId
     );
 
     if (occupied) {
       return {
         ok: false,
         error:
-          "That demo slot is already taken for the selected dentist. Choose another.",
+          "This sample time is already occupied for that provider.",
       };
     }
 
-    const id =
-      "YSM-" +
-      Date.now().toString(36).toUpperCase() +
-      "-" +
-      Math.random()
-        .toString(36)
-        .slice(2, 6)
-        .toUpperCase();
+    /* CREATE REFERENCE */
+
+    const id = `YSM-${Date.now()
+      .toString(36)
+      .toUpperCase()}-${Math.random()
+      .toString(36)
+      .slice(2, 6)
+      .toUpperCase()}`;
+
+    /* CREATE RECORD */
 
     const record = {
       id,
@@ -1658,6 +1296,10 @@ export default function App() {
     };
   }
 
+  /* ========================================
+     CANCEL DEMO APPOINTMENT
+  ======================================== */
+
   function cancelRequest(id) {
     const target = requests.find(
       (item) => item.id === id
@@ -1670,11 +1312,11 @@ export default function App() {
       return;
     }
 
-    if (
-      !window.confirm(
-        "Cancel this browser-local demo appointment request?"
-      )
-    ) {
+    const confirmed = window.confirm(
+      "Cancel this browser-local demo appointment request?"
+    );
+
+    if (!confirmed) {
       return;
     }
 
@@ -1690,6 +1332,10 @@ export default function App() {
     );
   }
 
+  /* ========================================
+     APP RENDER
+  ======================================== */
+
   return (
     <div className="ys-app">
       <ScrollToTop />
@@ -1701,136 +1347,234 @@ export default function App() {
         Skip to main content
       </a>
 
+      {/* PUBLIC HEADER */}
+
       {!isStaffRoute && <Header />}
 
-      <main id="main-content">
+      <div id="main-content">
         <Routes>
-          {/* BATCH 1 — ORIGINAL PAGES */}
+
+          {/* ==================================
+              BATCH 1 — HOMEPAGE
+          ================================== */}
 
           <Route
             index
-            element={<HomePage />}
+            element={
+              <SmileAtelierHome />
+            }
           />
+
+          {/* ==================================
+              BATCH 2 — TREATMENTS
+          ================================== */}
 
           <Route
             path="treatments"
-            element={<TreatmentsPage />}
+            element={
+              <TreatmentCollectionPage />
+            }
           />
 
           <Route
-            path="dentists"
-            element={<DentistsPage />}
+            path="treatments/:treatmentId"
+            element={
+              <TreatmentDetailsPage />
+            }
           />
+
+          {/* ==================================
+              BATCH 3 — DENTISTS
+          ================================== */}
+
+          <Route
+            path="dentists"
+            element={
+              <DentistCollectionPage />
+            }
+          />
+
+          <Route
+            path="dentists/:dentistId"
+            element={
+              <DentistProfilePage />
+            }
+          />
+
+          {/* ==================================
+              APPOINTMENT PREVIEW
+          ================================== */}
 
           <Route
             path="appointments"
             element={
               <AppointmentsPage
+                key={search}
                 requests={requests}
-                onCreateRequest={createRequest}
-                onCancelRequest={cancelRequest}
+                onCreateRequest={
+                  createRequest
+                }
+                onCancelRequest={
+                  cancelRequest
+                }
               />
             }
           />
 
-          {/* BATCH 2 — NEW PAGES */}
-
-          <Route
-            path="treatments/:treatmentId"
-            element={<TreatmentDetailsPage />}
-          />
-
-          <Route
-            path="dentists/:dentistId"
-            element={<DentistProfilePage />}
-          />
+          {/* ==================================
+              INTERACTIVE CALENDAR
+          ================================== */}
 
           <Route
             path="calendar"
             element={
               <AppointmentCalendarPage
+                key={search}
                 requests={requests}
-                onCreateRequest={createRequest}
+                onCreateRequest={
+                  createRequest
+                }
               />
             }
           />
+
+          {/* ==================================
+              DEMO REQUEST MANAGER
+          ================================== */}
 
           <Route
             path="manage"
             element={
               <AppointmentManagementPage
                 requests={requests}
-                onCancelRequest={cancelRequest}
+                onCancelRequest={
+                  cancelRequest
+                }
               />
             }
           />
 
-          {/* UNKNOWN URL */}
+          {/* ==================================
+              BATCH 4 — STAFF MANAGEMENT
 
-          {/* BATCH 3 — CLINIC OPERATIONS STUDIO */}
+              STAFF DEMO DESTINATION
+          ================================== */}
 
-<Route
-  path="staff"
-  element={
-    <StaffLayout
-      requests={requests}
-      onCancelRequest={cancelRequest}
-      onReplaceRequests={setRequests}
-    />
-  }
->
-  <Route
-    index
-    element={<StaffDashboardPage />}
-  />
+          <Route
+            path="staff"
+            element={
+              <StaffLayout
+                requests={requests}
+                onCancelRequest={
+                  cancelRequest
+                }
+                onReplaceRequests={
+                  setRequests
+                }
+              />
+            }
+          >
 
-  <Route
-    path="appointments"
-    element={<AppointmentDeskPage />}
-  />
+            {/* EXECUTIVE DASHBOARD */}
 
-  <Route
-    path="schedules"
-    element={<DentistSchedulesPage />}
-  />
+            <Route
+              index
+              element={
+                <StaffDashboardPage />
+              }
+            />
 
-  <Route
-    path="treatments"
-    element={<TreatmentManagementPage />}
-  />
+            {/* APPOINTMENT DESK */}
 
-  {/* BATCH 4 — CLINIC INTELLIGENCE */}
+            <Route
+              path="appointments"
+              element={
+                <AppointmentDeskPage />
+              }
+            />
 
-<Route
-  path="reports"
-  element={<ReportsPage />}
-/>
+            {/* DENTIST SCHEDULES */}
 
-<Route
-  path="insights"
-  element={<TreatmentInsightsPage />}
-/>
+            <Route
+              path="schedules"
+              element={
+                <DentistSchedulesPage />
+              }
+            />
 
-<Route
-  path="settings"
-  element={<ClinicSettingsPage />}
-/>
+            {/* TREATMENT MANAGEMENT */}
 
-<Route
-  path="data"
-  element={<DataCenterPage />}
-/>
-</Route>
+            <Route
+              path="treatments"
+              element={
+                <TreatmentManagementPage />
+              }
+            />
+
+            {/* ==================================
+                BATCH 5 — REPORTS
+            ================================== */}
+
+            <Route
+              path="reports"
+              element={
+                <ReportsPage />
+              }
+            />
+
+            {/* TREATMENT INSIGHTS */}
+
+            <Route
+              path="insights"
+              element={
+                <TreatmentInsightsPage />
+              }
+            />
+
+            {/* CLINIC SETTINGS */}
+
+            <Route
+              path="settings"
+              element={
+                <ClinicSettingsPage />
+              }
+            />
+
+            {/* DATA VAULT */}
+
+            <Route
+              path="data"
+              element={
+                <DataVaultPage />
+              }
+            />
+
+          </Route>
+
+          {/* ==================================
+              404 PAGE
+          ================================== */}
 
           <Route
             path="*"
-            element={<NotFoundPage />}
+            element={
+              <NotFoundPage />
+            }
           />
+
         </Routes>
-      </main>
+      </div>
+
+      {/* PUBLIC FOOTER */}
 
       {!isStaffRoute && <Footer />}
-      {!isStaffRoute && <SiteEnhancements />}
+
+      {/* WEBSITE ENHANCEMENTS */}
+
+      {!isStaffRoute && (
+        <SiteEnhancements />
+      )}
+
     </div>
   );
 }

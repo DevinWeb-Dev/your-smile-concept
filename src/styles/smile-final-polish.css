@@ -1,0 +1,597 @@
+/* ============================================================
+   YOUR SMILE. / ARCHITECTURAL FINAL PASS — BATCH 06
+   Applied after the original/global design system.
+   Ink blue · porcelain · lavender · warm coral.
+   This is a finishing layer, not a replacement for Batches 1–5.
+   ============================================================ */
+
+:root {
+  --ys6-ink: #203452;
+  --ys6-coral: #d5806b;
+  --ys6-lavender: #e3e6f4;
+  --ys6-line: #d1dce3;
+  --ys6-paper: #fbfaf6;
+  --ys6-ease: cubic-bezier(.22, 1, .36, 1);
+}
+
+.ys6-screen-reader-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  clip-path: inset(50%) !important;
+}
+
+/* Focus should work across all three visual generations. */
+
+.ys-app :where(
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  summary
+):focus-visible,
+.sm4-shell :where(
+  a,
+  button,
+  input,
+  select,
+  textarea
+):focus-visible {
+  outline: 3px solid var(--ys6-coral);
+  outline-offset: 3px;
+}
+
+.ys-app :where(
+  .sa1-home,
+  .st2,
+  .sp3,
+  .sm4-shell,
+  .sm5-page
+) {
+  min-width: 0;
+}
+
+.ys-app :where(
+  .sa1-home,
+  .st2,
+  .sp3,
+  .sm4-shell,
+  .sm5-page
+) :where(
+  p,
+  h1,
+  h2,
+  h3,
+  strong
+) {
+  overflow-wrap: break-word;
+}
+
+.ys-app :where(
+  .sa1-home,
+  .st2,
+  .sp3,
+  .sm4-shell,
+  .sm5-page
+) img {
+  max-width: 100%;
+}
+
+/* ============================================================
+   01 / STAFF DEMO — ONE VISIBLE HEADER BUTTON
+   /staff is the existing executive dashboard route.
+   ============================================================ */
+
+.ys-app .ys-header {
+  isolation: isolate;
+  z-index: 1100;
+  border-color: #c8d5df;
+}
+
+.ys-app .ys-header-inner {
+  min-width: 0;
+  gap: clamp(8px, 1.4vw, 24px);
+}
+
+.ys-app .ys-header-inner > a:first-child {
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.ys-app .ys-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+}
+
+.ys-app .ys-header-actions .sm4-staff-access {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 7px;
+
+  min-height: 43px;
+  padding: 9px 12px;
+
+  border: 1px solid #9babc7;
+  background: var(--ys6-lavender);
+  color: var(--ys6-ink);
+
+  font: 600 10px/1.1 'DM Mono', monospace;
+  text-decoration: none;
+  white-space: nowrap;
+
+  box-shadow: 3px 3px 0 #20345215;
+
+  transition:
+    background .3s var(--ys6-ease),
+    color .3s var(--ys6-ease),
+    transform .3s var(--ys6-ease);
+}
+
+.ys-app .ys-header-actions .sm4-staff-access:hover {
+  background: var(--ys6-ink);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* Hide this extra link on desktop:
+   the header already has Staff Demo. */
+
+.ys-app .ys-navigation .ys3-staff-mobile {
+  display: none;
+}
+
+/* ============================================================
+   02 / PREVENT HEADER COLLISIONS ON SMALL LAPTOPS
+
+   Original collapse breakpoint = 960px.
+   With an extra Staff Demo button, collapse earlier.
+   ============================================================ */
+
+@media (max-width: 1180px) {
+  .ys-app .ys-header {
+    position: sticky;
+  }
+
+  .ys-app .ys-header-inner {
+    width: min(100% - 34px, 1420px);
+    min-height: 76px;
+  }
+
+  .ys-app .ys-navigation {
+    display: none;
+    position: absolute;
+    top: 100%;
+    inset-inline: 0;
+    z-index: 1101;
+
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+
+    padding:
+      17px
+      clamp(17px, 4vw, 38px)
+      25px;
+
+    background: #fbfaf6;
+    border-bottom: 1px solid var(--ys6-line);
+
+    box-shadow: 0 22px 36px #20345224;
+
+    max-height: calc(100dvh - 76px);
+    overflow-y: auto;
+  }
+
+  .ys-app .ys-navigation.is-open {
+    display: flex;
+  }
+
+  .ys-app .ys-navigation > a:not(
+    .ys-mobile-appointment
+  ) {
+    position: relative;
+    min-height: 48px;
+    padding: 12px 6px;
+
+    color: var(--ys6-ink);
+    font-size: 13px;
+  }
+
+  .ys-app .ys-navigation > a::after {
+    display: none;
+  }
+
+  .ys-app .ys-navigation .ys3-staff-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    min-height: 51px;
+    margin-top: 9px;
+    padding: 13px 16px;
+
+    background: var(--ys6-lavender);
+    border: 1px solid #c4cde0;
+    color: var(--ys6-ink);
+
+    font: 700 12px 'DM Sans', sans-serif;
+  }
+
+  .ys-app .ys-navigation > .ys-mobile-appointment {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 11px;
+
+    margin-top: 7px;
+    min-height: 50px;
+    padding: 14px 16px;
+
+    background: var(--ys6-ink);
+    color: #fff;
+
+    font: 700 12px 'DM Sans', sans-serif;
+  }
+
+  .ys-app .ys-menu-button {
+    display: grid;
+    place-items: center;
+
+    width: 43px;
+    height: 43px;
+    flex-shrink: 0;
+
+    border: 1px solid var(--ys6-line);
+    color: var(--ys6-ink);
+    background: transparent;
+  }
+
+  .ys-app .ys-header-actions .sm4-staff-access-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 690px) {
+  .ys-app .ys-header-inner {
+    width: calc(100% - 24px);
+    min-height: 69px;
+    gap: 5px;
+  }
+
+  .ys-app .ys-header-actions {
+    gap: 5px;
+  }
+
+  .ys-app .ys-header-inner .ys-brand {
+    gap: 6px;
+  }
+
+  .ys-app .ys-header-inner .ys-brand-symbol {
+    width: 35px;
+    height: 35px;
+  }
+
+  .ys-app .ys-header-inner .ys-brand-word {
+    font-size: clamp(12px, 3.1vw, 17px);
+    letter-spacing: -.025em;
+  }
+
+  .ys-app .ys-header-actions .ys-header-cta {
+    display: none;
+  }
+
+  /* Label stays visible — not icon-only. */
+
+  .ys-app .ys-header-actions .sm4-staff-access {
+    padding: 9px 8px;
+    min-height: 39px;
+    gap: 5px;
+    font-size: 9px;
+  }
+
+  .ys-app .ys-header-actions
+  .sm4-staff-access > svg:first-child {
+    width: 15px;
+    height: 15px;
+  }
+
+  .ys-app .ys-menu-button {
+    width: 39px;
+    height: 39px;
+  }
+
+  .ys-app .ys-navigation {
+    max-height: calc(100dvh - 69px);
+  }
+}
+
+@media (max-width: 365px) {
+  .ys-app .ys-header-actions .sm4-staff-access {
+    font-size: 8px;
+    padding-inline: 6px;
+  }
+
+  .ys-app .ys-header-inner .ys-brand-symbol {
+    width: 31px;
+    height: 31px;
+  }
+
+  .ys-app .ys-header-inner .ys-brand-word {
+    font-size: 11px;
+  }
+}
+
+/* ============================================================
+   03 / EDITORIAL PUBLIC PAGES — FINISHING PASSES
+   ============================================================ */
+
+.ys-app :where(
+  .sa1-hero,
+  .st2-collection-cover,
+  .sp3-people-hero,
+  .sp3-calendar-hero
+) {
+  overflow: clip;
+}
+
+.ys-app :where(
+  .sa1-care-explorer,
+  .st2-filter-main,
+  .sp3-calendar-grid,
+  .st2-detail-layout
+) {
+  min-width: 0;
+}
+
+.ys-app :where(
+  .sa1-hero-content,
+  .st2-cover-heading,
+  .sp3-people-hero__copy
+) {
+  min-width: 0;
+}
+
+/* Long treatment/doctor names
+   should never push the page sideways. */
+
+.ys-app :where(
+  .st2-study-body h3,
+  .st2-detail-title h1,
+  .sp3-profile-hero h1,
+  .sm5-intro h1
+) {
+  overflow-wrap: anywhere;
+}
+
+/* Anchor positions beneath the sticky navbar. */
+
+.ys-app :where(
+  #sa1-treatment-lab,
+  #st2-discovery,
+  #st2-care-story,
+  #sp3-people-index,
+  #sp3-philosophy,
+  #sp3-booking-board
+) {
+  scroll-margin-top: 105px;
+}
+
+/* Comparison controls */
+
+.ys-app .st2-compare-dock {
+  max-height: min(43dvh, 230px);
+  overflow-y: auto;
+}
+
+.ys-app .st2-modal-backdrop .st2-modal,
+.st2-modal-backdrop .st2-modal {
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 960px) {
+  .ys-app .sa1-hero h1,
+  .ys-app .st2-cover-heading h1,
+  .ys-app .sp3-people-hero h1 {
+    margin-right: 0;
+    white-space: normal;
+  }
+
+  .ys-app :where(
+    .st2-study-card,
+    .sp3-person,
+    .sm5-panel
+  ) {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 650px) {
+  .ys-app .sa1-hero h1 {
+    font-size: clamp(77px, 18vw, 115px);
+  }
+
+  .ys-app .st2-cover-heading h1 {
+    font-size: clamp(67px, 15vw, 102px);
+    line-height: .9;
+  }
+
+  .ys-app .sp3-people-hero h1 {
+    font-size: clamp(63px, 12vw, 93px);
+  }
+
+  .ys-app .sp3-calendar-hero h1 {
+    font-size: clamp(62px, 12vw, 90px);
+  }
+
+  .ys-app .st2-detail-title h1 {
+    font-size: clamp(53px, 11.5vw, 83px);
+  }
+
+  .ys-app .sp3-month__days button {
+    min-width: 0;
+    min-height: 46px;
+    padding: 5px 0;
+  }
+
+  .ys-app .sp3-time-list button {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .ys-app .st2-compare-dock {
+    bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .ys-app .st2-modal {
+    max-height: calc(100dvh - 20px);
+  }
+}
+
+/* ============================================================
+   04 / PREMIUM STAFF SCREENS — FINAL UNITY PASS
+   ============================================================ */
+
+.ys-app .sm4-shell .sm4-content {
+  min-width: 0;
+}
+
+.ys-app .sm4-shell :where(
+  .sm4-panel,
+  .sm5-panel,
+  .sm4-main,
+  .sm5-page
+) {
+  min-width: 0;
+}
+
+.ys-app .sm4-shell :where(
+  .sm4-command-hero,
+  .sm5-intro
+) {
+  overflow: clip;
+}
+
+.ys-app .sm4-shell :where(
+  .sm4-filters,
+  .sm5-filterbar
+) :where(input, select) {
+  max-width: 100%;
+}
+
+/* Schedule should scroll horizontally by design. */
+
+.ys-app .sm4-shell .sm4-schedule-board {
+  min-width: max-content;
+}
+
+.ys-app .sm4-shell .sm5-pulse {
+  min-width: 0;
+}
+
+.ys-app .sm4-shell .sm5-vault-original {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 950px) {
+  .ys-app .sm4-shell .sm5-doctor-grid,
+  .ys-app .sm4-shell .sm5-report-grid,
+  .ys-app .sm4-shell .sm5-settings-grid,
+  .ys-app .sm4-shell .sm5-insight-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 650px) {
+  .ys-app .sm4-shell .sm4-content {
+    padding: 12px;
+  }
+
+  .ys-app .sm4-shell .sm5-intro > div:first-child {
+    padding: 25px 20px;
+  }
+
+  .ys-app .sm4-shell .sm5-intro h1 {
+    font-size: clamp(53px, 11vw, 78px);
+  }
+
+  .ys-app .sm4-shell .sm5-panel {
+    padding: 18px;
+  }
+
+  .ys-app .sm4-shell .sm5-metrics,
+  .ys-app .sm4-shell .sm4-metrics {
+    grid-template-columns: repeat(
+      2,
+      minmax(0, 1fr)
+    );
+  }
+
+  .ys-app .sm4-shell .sm5-vault-primer,
+  .ys-app .sm4-shell .sm5-settings-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ys-app .sm4-shell .sm5-pulse {
+    gap: 3px;
+  }
+
+  .ys-app .sm4-shell .sm4-topbar {
+    min-width: 0;
+  }
+}
+
+/* ============================================================
+   05 / PLATFORM ADAPTATION & ACCESSIBILITY
+   ============================================================ */
+
+@supports (text-wrap: balance) {
+  .ys-app :where(
+    .sa1-home,
+    .st2,
+    .sp3,
+    .sm5-page
+  ) :where(h1, h2) {
+    text-wrap: balance;
+  }
+}
+
+@media (hover: none) {
+  .ys-app :where(
+    .sa1-btn,
+    .st2-study-actions > a,
+    .sp3-person__links a,
+    .sm5-button
+  ):hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  .ys-app *,
+  .ys-app *::before,
+  .ys-app *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .ys-app .sa1-reveal,
+  .ys-app .st2-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

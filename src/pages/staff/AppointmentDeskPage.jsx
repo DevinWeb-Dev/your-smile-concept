@@ -1,469 +1,108 @@
 import { useMemo, useState } from "react";
-
+import { Link, useOutletContext } from "react-router-dom";
 import {
-  Link,
-  useOutletContext,
-} from "react-router-dom";
-
-import {
-  ArrowRight,
-  ArrowUpRight,
-  CalendarDays,
-  CheckCircle2,
-  ClipboardList,
-  Clock3,
-  Download,
-  Filter,
-  Search,
-  ShieldCheck,
-  Trash2,
-  Users,
-  XCircle,
+  ArrowRight, ArrowUpRight, CalendarDays,
+  ClipboardList, Download, Search, ShieldCheck, SlidersHorizontal,
+  Trash2, X,
 } from "lucide-react";
+import { DENTISTS, TREATMENTS, formatDate, formatTime, formatPeso } from "../../data/clinicData.js";
+import { exportAppointmentCSV, localDateKey } from "../../utils/clinicReports.js";
 
-import {
-  DENTISTS,
-  TREATMENTS,
-  formatDate,
-  formatTime,
-} from "../../data/clinicData.js";
-
-function csvCell(value) {
-  let text = String(value ?? "");
-
-  // Prevent spreadsheet applications from
-  // executing user-provided values as formulas.
-  if (/^[\s]*[=+\-@]/.test(text)) {
-    text = `'${text}`;
-  }
-
-  return `"${text.replace(/"/g, '""')}"`;
-}
-
-function downloadCSV(rows) {
-  const header = [
-    "Reference",
-    "Demo Alias",
-    "Treatment",
-    "Dentist",
-    "Date",
-    "Time",
-    "Status",
-  ];
-
-  const lines = [
-    header.map(csvCell).join(","),
-    ...rows.map((row) =>
-      [
-        row.id,
-        row.alias,
-        TREATMENTS.find(
-          (t) => t.id === row.serviceId
-        )?.name || "",
-        DENTISTS.find(
-          (d) => d.id === row.doctorId
-        )?.name || "",
-        row.date,
-        row.time,
-        row.status,
-      ]
-        .map(csvCell)
-        .join(",")
-    ),
-  ];
-
-  const blob = new Blob(
-    [lines.join("\r\n")],
-    {
-      type: "text/csv;charset=utf-8",
-    }
-  );
-
-  const url = URL.createObjectURL(blob);
-
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = "your-smile-demo-appointments.csv";
-
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-
-  URL.revokeObjectURL(url);
-}
+const getDoctor = (id) => DENTISTS.find((d) => d.id === id);
+const getService = (id) => TREATMENTS.find((t) => t.id === id);
 
 export default function AppointmentDeskPage() {
-  const {
-    requests,
-    onCancelRequest,
-  } = useOutletContext();
-
+  const { requests = [], onCancelRequest } = useOutletContext();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
-  const [doctorId, setDoctorId] = useState("all");
+  const [doctor, setDoctor] = useState("all");
   const [date, setDate] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
+  const [message, setMessage] = useState("");
+  const today = localDateKey();
+  const open = requests.filter((r) => r.status === "requested").length;
+  const selected = requests.find((r) => r.id === selectedId);
+  const filtered = useMemo(() => requests.filter((r) => {
+    const searchable = [r.alias, r.id, getDoctor(r.doctorId)?.name, getService(r.serviceId)?.name].join(" ").toLowerCase();
+    return (status === "all" || r.status === status) &&
+      (doctor === "all" || r.doctorId === doctor) &&
+      (!date || r.date === date) && searchable.includes(query.trim().toLowerCase());
+  }).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)),
+  [requests, query, status, doctor, date]);
+  const reset = () => { setQuery(""); setStatus("all"); setDoctor("all"); setDate(""); };
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-
-    return requests
-      .filter((item) => {
-        if (
-          status !== "all" &&
-          item.status !== status
-        ) {
-          return false;
-        }
-
-        if (
-          doctorId !== "all" &&
-          item.doctorId !== doctorId
-        ) {
-          return false;
-        }
-
-        if (date && item.date !== date) {
-          return false;
-        }
-
-        const treatment = TREATMENTS.find(
-          (t) => t.id === item.serviceId
-        );
-
-        const dentist = DENTISTS.find(
-          (d) => d.id === item.doctorId
-        );
-
-        const content = [
-          item.id,
-          item.alias,
-          item.date,
-          item.time,
-          treatment?.name,
-          dentist?.name,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        return content.includes(q);
-      })
-      .sort((a, b) =>
-        `${a.date} ${a.time}`.localeCompare(
-          `${b.date} ${b.time}`
-        )
-      );
-  }, [requests, query, status, doctorId, date]);
-
-  const requestedCount = requests.filter(
-    (item) => item.status === "requested"
-  ).length;
-
-  const cancelledCount = requests.filter(
-    (item) => item.status === "cancelled"
-  ).length;
-
-  function clearFilters() {
-    setQuery("");
-    setStatus("all");
-    setDoctorId("all");
-    setDate("");
+  function cancel() {
+    if (!selected || selected.status !== "requested") return;
+    // Original App function already displays a confirmation and changes local records.
+    onCancelRequest(selected.id);
+    setMessage("Cancellation requested. If you confirmed, this record's status will update locally.");
   }
 
   return (
-    <div className="ysm3-page">
-      <div className="ysm3-page-heading">
-        <div>
-          <span className="ysm3-eyebrow">
-            APPOINTMENT MANAGEMENT
-          </span>
-
-          <h1>
-            Every request,
-            <br />
-            <em>beautifully in order.</em>
-          </h1>
-
-          <p>
-            Review, filter and manage the fictional
-            appointment requests made in this browser.
-          </p>
-        </div>
-
-        <Link
-          className="ysm3-primary-button"
-          to="/calendar"
-        >
-          <CalendarDays size={18} />
-          New Demo Request
-          <ArrowUpRight size={16} />
-        </Link>
+    <div className="sm4-page">
+      <div className="sm4-page-heading">
+        <div><span className="sm4-eyebrow">02 / THE APPOINTMENT DESK</span><h1>Every request, <em>in its place.</em></h1><p>Review, filter, and manage fictional appointment requests made in this browser.</p></div>
+        <Link className="sm4-btn" to="/calendar">CREATE A DEMO REQUEST <ArrowUpRight size={17}/></Link>
       </div>
-
-      <div className="ysm3-desk-overview">
-        <div>
-          <ClipboardList size={22} />
-
-          <span>
-            <strong>{requests.length}</strong>
-            <small>Total requests</small>
-          </span>
-        </div>
-
-        <div>
-          <CheckCircle2 size={22} />
-
-          <span>
-            <strong>{requestedCount}</strong>
-            <small>Active requests</small>
-          </span>
-        </div>
-
-        <div>
-          <XCircle size={22} />
-
-          <span>
-            <strong>{cancelledCount}</strong>
-            <small>Cancelled requests</small>
-          </span>
-        </div>
+      <div className="sm4-strip-stats">
+        <div><span>ALL RECORDS</span><strong>{requests.length}</strong></div>
+        <div><span>OPEN REQUESTS</span><strong>{open}</strong></div>
+        <div><span>CANCELLED</span><strong>{requests.length - open}</strong></div>
+        <div><span>FUTURE OPEN REQUESTS</span><strong>{requests.filter((r)=>r.status==="requested" && r.date >= today).length}</strong></div>
       </div>
-
-      <section className="ysm3-panel">
-        <div className="ysm3-panel-heading">
-          <div>
-            <span className="ysm3-eyebrow">
-              THE REQUEST DESK
-            </span>
-
-            <h2>
-              Appointment <em>records.</em>
-            </h2>
+      <div className="sm4-desk-layout">
+        <section className="sm4-panel sm4-ledger">
+          <div className="sm4-panel-top"><div><span className="sm4-eyebrow">01 / REQUEST INDEX</span><h2>The appointment <em>ledger.</em></h2></div><ClipboardList size={23}/></div>
+          <div className="sm4-filter-pills" role="group" aria-label="Filter by status">
+            {[ ["all", "ALL", requests.length], ["requested", "REQUESTED", open], ["cancelled", "CANCELLED", requests.length - open] ].map(([id, label, count]) => (
+              <button key={id} type="button" aria-pressed={status===id} className={status===id ? "is-active" : ""} onClick={() => setStatus(id)}><b>{count}</b><span>{label}</span></button>
+            ))}
           </div>
-
-          <button
-            className="ysm3-secondary-button"
-            type="button"
-            onClick={() => downloadCSV(filtered)}
-          >
-            <Download size={17} />
-            Export CSV
-          </button>
-        </div>
-
-        <div className="ysm3-filter-grid">
-          <label className="ysm3-filter-search">
-            <Search size={18} />
-
-            <input
-              type="search"
-              placeholder="Search alias, ID, treatment..."
-              aria-label="Search requests"
-              value={query}
-              onChange={(event) =>
-                setQuery(event.target.value)
-              }
-            />
-          </label>
-
-          <label>
-            <span>STATUS</span>
-
-            <select
-              value={status}
-              onChange={(event) =>
-                setStatus(event.target.value)
-              }
-            >
-              <option value="all">All Statuses</option>
-              <option value="requested">Requested</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </label>
-
-          <label>
-            <span>SAMPLE DENTIST</span>
-
-            <select
-              value={doctorId}
-              onChange={(event) =>
-                setDoctorId(event.target.value)
-              }
-            >
-              <option value="all">All Dentists</option>
-
-              {DENTISTS.map((doctor) => (
-                <option
-                  key={doctor.id}
-                  value={doctor.id}
-                >
-                  {doctor.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label>
-            <span>APPOINTMENT DATE</span>
-
-            <input
-              type="date"
-              value={date}
-              onChange={(event) =>
-                setDate(event.target.value)
-              }
-            />
-          </label>
-        </div>
-
-        <div className="ysm3-filter-summary">
-          <span>
-            <Filter size={15} />
-            Showing {filtered.length} of{" "}
-            {requests.length} demo records
-          </span>
-
-          <button
-            type="button"
-            onClick={clearFilters}
-          >
-            Clear all filters
-            <ArrowRight size={15} />
-          </button>
-        </div>
-
-        {filtered.length === 0 ? (
-          <div className="ysm3-empty-state">
-            <ClipboardList size={33} />
-
-            <h3>No matching demo requests.</h3>
-
-            <p>
-              Try clearing the filters or create a
-              sample appointment from the public calendar.
-            </p>
-
-            <button
-              type="button"
-              className="ysm3-secondary-button"
-              onClick={clearFilters}
-            >
-              Clear Filters
-              <ArrowRight size={16} />
-            </button>
+          <div className="sm4-filters">
+            <label className="sm4-search"><Search size={17}/><input type="search" value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search alias, reference, service..." aria-label="Search requests"/></label>
+            <label><span>DENTIST</span><select value={doctor} onChange={(e)=>setDoctor(e.target.value)}><option value="all">All sample profiles</option>{DENTISTS.map((d)=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
+            <label><span>DATE</span><input type="date" value={date} onChange={(e)=>setDate(e.target.value)}/></label>
           </div>
-        ) : (
-          <div className="ysm3-desk-list">
-            {filtered.map((item) => {
-              const treatment = TREATMENTS.find(
-                (t) => t.id === item.serviceId
-              );
-
-              const doctor = DENTISTS.find(
-                (d) => d.id === item.doctorId
-              );
-
-              const isCancelled =
-                item.status === "cancelled";
-
-              return (
-                <article
-                  key={item.id}
-                  className="ysm3-desk-card"
-                >
-                  <div className="ysm3-desk-card-top">
-                    <span className="ysm3-reference">
-                      {item.id}
-                    </span>
-
-                    <span
-                      className={`ysm3-status-pill ${
-                        isCancelled
-                          ? "is-cancelled"
-                          : ""
-                      }`}
-                    >
-                      {isCancelled
-                        ? "Cancelled"
-                        : "Demo Requested"}
-                    </span>
-                  </div>
-
-                  <div className="ysm3-desk-card-body">
-                    <div className="ysm3-desk-card-icon">
-                      <ClipboardList size={24} />
-                    </div>
-
-                    <div className="ysm3-desk-card-copy">
-                      <h3>
-                        {treatment?.name ||
-                          "Dental Consultation"}
-                      </h3>
-
-                      <strong>
-                        Demo alias:{" "}
-                        {item.alias || "Visitor"}
-                      </strong>
-
-                      <div className="ysm3-desk-card-meta">
-                        <span>
-                          <Users size={16} />
-                          {doctor?.name ||
-                            "Sample Dentist"}
-                        </span>
-
-                        <span>
-                          <CalendarDays size={16} />
-                          {formatDate(item.date)}
-                        </span>
-
-                        <span>
-                          <Clock3 size={16} />
-                          {formatTime(item.time)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="ysm3-desk-card-bottom">
-                    <small>
-                      No real patient information
-                      or clinical status
-                    </small>
-
-                    {!isCancelled && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onCancelRequest(item.id)
-                        }
-                      >
-                        <Trash2 size={17} />
-                        Cancel Demo Request
-                      </button>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
+          <div className="sm4-ledger-toolbar">
+            <span><SlidersHorizontal size={16}/> {filtered.length} MATCHING RECORD{filtered.length===1?"":"S"}</span>
+            <div><button type="button" onClick={reset}>CLEAR FILTERS</button><button type="button" disabled={!filtered.length} onClick={()=>exportAppointmentCSV(filtered,"your-smile-demo-desk.csv")}><Download size={16}/> EXPORT CSV</button></div>
           </div>
-        )}
-      </section>
-
-      <div className="ysm3-dashboard-note">
-        <ShieldCheck size={23} />
-
-        <div>
-          <strong>Privacy-first demonstration</strong>
-
-          <p>
-            The CSV contains only browser-local
-            fictional appointment data. Do not
-            use this prototype to process real
-            patient records or health details.
-          </p>
-        </div>
+          <div className="sm4-ledger-list">
+            {filtered.length ? filtered.map((r, index) => (
+              <button type="button" className={`sm4-ledger-item ${r.id===selectedId?"is-selected":""}`} key={r.id} aria-pressed={r.id===selectedId} onClick={()=>{setSelectedId(r.id);setMessage("");}}>
+                <small>{String(index+1).padStart(2,"0")}</small>
+                <span><b>{r.alias}</b><small>{r.id} · {getService(r.serviceId)?.name || "Unknown treatment"}</small></span>
+                <span><strong>{formatDate(r.date)}</strong><small>{formatTime(r.time)}</small></span>
+                <i className={`sm4-status sm4-status-${r.status}`}>{r.status.toUpperCase()}</i>
+                <ArrowUpRight size={17}/>
+              </button>
+            )) : <div className="sm4-empty"><Search size={28}/><p>No requests match your filters.</p><button type="button" onClick={reset}>SHOW ALL RECORDS <ArrowRight size={15}/></button></div>}
+          </div>
+        </section>
+        <aside className="sm4-panel sm4-inspector">
+          {!selected ? <div className="sm4-inspector-placeholder"><CalendarDays size={38}/><span className="sm4-eyebrow">02 / THE REQUEST FOLIO</span><h2>Choose a <em>record.</em></h2><p>Select a sample request in the ledger to view its details and available actions.</p></div> : <>
+            <div className="sm4-inspector-head"><span className="sm4-eyebrow">02 / SELECTED REQUEST</span><button type="button" aria-label="Close request details" onClick={()=>setSelectedId(null)}><X size={20}/></button></div>
+            <div className="sm4-inspector-image"><img src={getService(selected.serviceId)?.image} alt="Illustrative dental care setting"/><span>YOUR SMILE / REQUEST FOLIO</span></div>
+            <div className="sm4-inspector-body">
+              <span className={`sm4-status sm4-status-${selected.status}`}>{selected.status.toUpperCase()}</span>
+              <h2>{selected.alias}</h2><small>REFERENCE / {selected.id}</small>
+              <div className="sm4-folio-facts">
+                <div><span>DATE</span><strong>{formatDate(selected.date)}</strong></div>
+                <div><span>TIME</span><strong>{formatTime(selected.time)}</strong></div>
+                <div><span>FICTIONAL DENTIST</span><strong>{getDoctor(selected.doctorId)?.name || "Unavailable"}</strong></div>
+                <div><span>TREATMENT INTEREST</span><strong>{getService(selected.serviceId)?.name || "Unavailable"}</strong></div>
+                <div><span>ILLUSTRATIVE FEE FROM</span><strong>{formatPeso(getService(selected.serviceId)?.priceFrom)}</strong></div>
+                <div><span>CREATED</span><strong>{selected.createdAt ? new Date(selected.createdAt).toLocaleDateString("en-PH") : "—"}</strong></div>
+              </div>
+              {selected.status === "requested" && <button type="button" className="sm4-cancel" onClick={cancel}><Trash2 size={18}/> CANCEL DEMO REQUEST</button>}
+              {selected.status === "cancelled" && <p className="sm4-fine">Cancelled demo requests remain in the local history and no longer occupy their sample time slot.</p>}
+              {message && <p className="sm4-alert" role="status">{message}</p>}
+              <p className="sm4-disclosure"><ShieldCheck size={17}/> The original browser-local handler controls cancellation and asks for confirmation.</p>
+            </div>
+          </>}
+        </aside>
       </div>
+      <p className="sm4-disclosure"><ShieldCheck size={17}/> Aliases are fictional demo values. Exported CSVs are local files; keep them private if users have typed identifiable information.</p>
     </div>
   );
 }
